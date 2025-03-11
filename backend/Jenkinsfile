@@ -26,7 +26,7 @@ pipeline {
       steps {
         echo 'Running backend tests...'
         dir('backend') {
-          bat 'npm test'
+          bat 'npm test '
         }
       }
     }
@@ -35,7 +35,7 @@ pipeline {
       steps {
         echo 'Building backend...'
         dir('backend') {
-          bat 'npm run build'
+          bat 'npm run start'
         }
       }
     }
