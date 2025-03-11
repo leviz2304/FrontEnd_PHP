@@ -68,5 +68,8 @@ app.get("/", (req, res) => {
   res.send("API Working");
 });
 
-app.listen(port, () => console.log("Server is running on PORT : " + port));
-export default app;
+if (process.env.NODE_ENV !== "test") {
+  app.listen(port, () =>
+    console.log(`Server is running on PORT : ${port}`)
+  );
+}export default app;
