@@ -1,0 +1,52 @@
+pipeline {
+  agent any
+
+  environment {
+    NODE_ENV = 'test'
+    PORT = '4000'
+    // Lấy thông tin credentials từ Jenkins (thay 'KEY' bằng ID credentials đã thiết lập)
+    MONGO_URI = credentials('MONGO_URI')
+    CLDN_NAME = credentials('CLDN_NAME')
+    CLDN_API_KEY = credentials('CLDN_API_KEY')
+    CLDN_API_SECRET = credentials('CLDN_API_SECRET')
+    JWT_SECRET = credentials('JWT_SECRET')
+  }
+
+  stages {
+    stage('Install Dependencies') {
+      steps {
+        echo 'Installing backend dependencies...'
+        sh 'npm install'
+      }
+    }
+    
+    stage('Run Tests') {
+      steps {
+        echo 'Running backend tests...'
+        sh 'npm test'
+      }
+    }
+    
+    stage('Build & Start Server') {
+      steps {
+        echo 'Starting server on port 4000...'
+        // Nếu bạn dùng nodemon hoặc node, chạy server. Ví dụ:
+        sh 'PORT=4000 node server.js &'
+        // Lưu ý: Bạn có thể cần xử lý việc dừng server sau build.
+      }
+    }
+  }
+
+  post {
+    always {
+      echo 'Cleaning up...'
+      // Dừng server nếu cần
+    }
+    success {
+      echo 'Pipeline succeeded!'
+    }
+    failure {
+      echo 'Pipeline failed!'
+    }
+  }
+}
