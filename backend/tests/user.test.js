@@ -1,10 +1,10 @@
 // tests/user.test.js
-import request from "supertest";
-import mongoose from "mongoose";
-import app from "../server"; // Giả sử bạn export app từ server.js
+const request = require("supertest");
+const mongoose = require("mongoose");
+const app = require("../server"); // Đảm bảo rằng server.js xuất ra app bằng module.exports = app
 
 describe("User Authentication", () => {
-  // Sử dụng cơ sở dữ liệu test, ví dụ: MONGO_URI_TEST trong .env
+  // Kết nối đến cơ sở dữ liệu test trước khi chạy test
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGO_URI_TEST, {
       useNewUrlParser: true,
@@ -12,8 +12,9 @@ describe("User Authentication", () => {
     });
   });
 
+  // Sau khi test xong, xoá database và đóng kết nối
   afterAll(async () => {
-    await mongoose.connection.dropDatabase(); // Xoá dữ liệu test
+    await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
   });
 
@@ -45,7 +46,7 @@ describe("User Authentication", () => {
       expect(res.body.token).toBeDefined();
     });
 
-    it("should return error for invalid credentials", async () => {
+    it("should fail login with wrong password", async () => {
       const res = await request(app)
         .post("/api/user/login")
         .send({
@@ -57,6 +58,4 @@ describe("User Authentication", () => {
       expect(res.body.message).toMatch(/Invalid Credentials/);
     });
   });
-
-  // Bạn có thể viết thêm các test khác như adminLogin nếu cần
 });
