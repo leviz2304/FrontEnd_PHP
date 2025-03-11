@@ -1,7 +1,9 @@
 // tests/user.test.js
-const request = require("supertest");
-const mongoose = require("mongoose");
-const app = require("../server"); // Đảm bảo rằng server.js xuất ra app bằng module.exports = app
+import request from "supertest";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config(); // Đảm bảo đọc biến môi trường từ .env (bao gồm MONGO_URI_TEST)
+import app from "../server.js"; // Sử dụng export default của ES module
 
 describe("User Authentication", () => {
   // Kết nối đến cơ sở dữ liệu test trước khi chạy test
