@@ -2,11 +2,10 @@
 import request from "supertest";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-dotenv.config(); // Đảm bảo đọc biến môi trường từ .env (bao gồm MONGO_URI_TEST)
-import app from "../server.js"; // Sử dụng export default của ES module
+dotenv.config({ path: ".env.test" }); // Nạp biến môi trường từ file .env.test
+import app from "../server.js";
 
 describe("User Authentication", () => {
-  // Kết nối đến cơ sở dữ liệu test trước khi chạy test
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGO_URI_TEST, {
       useNewUrlParser: true,
@@ -14,7 +13,6 @@ describe("User Authentication", () => {
     });
   });
 
-  // Sau khi test xong, xoá database và đóng kết nối
   afterAll(async () => {
     await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
