@@ -15,27 +15,26 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         echo 'Installing backend dependencies...'
-        dir('backend') {
-          sh 'npm install'
-        }
+        
+          bat 'npm install'
+    
       }
     }
     
     stage('Run Tests') {
       steps {
         echo 'Running backend tests...'
-        dir('backend') {
-          sh 'npm test'
-        }
+        
+          bat 'npm test'
+        
       }
     }
     
     stage('Build') {
       steps {
         echo 'Building backend...'
-        dir('backend') {
-          sh 'npm run build'
-        }
+          bat 'npm run build'
+        
       }
     }
   }
