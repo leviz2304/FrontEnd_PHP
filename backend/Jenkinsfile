@@ -35,7 +35,7 @@ pipeline {
       steps {
         echo 'Building backend...'
         dir('backend') {
-          bat 'npm run start'
+          bat 'npm run build'
         }
       }
     }
