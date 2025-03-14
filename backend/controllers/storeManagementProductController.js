@@ -1,21 +1,19 @@
-// src/controllers/storeManagementProductController.js
 import { v2 as cloudinary } from "cloudinary";
 import productModel from "../models/productModel.js";
 import storeModel from "../models/storeModel.js";
 import jwt from "jsonwebtoken";
-
-// Tạo sản phẩm mới cho store (CRUD Create)
 export const createProduct = async (req, res) => {
   try {
     const { name, description, price, category, colors, popular } = req.body;
     const { token } = req.headers;
     
-    // Xử lý upload ảnh (với multer)
+    // Retrieve uploaded files
     const image1 = req.files?.image1?.[0];
     const image2 = req.files?.image2?.[0];
     const image3 = req.files?.image3?.[0];
     const image4 = req.files?.image4?.[0];
-    const images = [image1, image2, image3, image4].filter((item) => item !== undefined);
+    // Filter out any falsy values (null, undefined, etc.)
+    const images = [image1, image2, image3, image4].filter((item) => item);
     let imagesUrl;
     if (images.length > 0) {
       imagesUrl = await Promise.all(
@@ -25,25 +23,24 @@ export const createProduct = async (req, res) => {
         })
       );
     } else {
-      imagesUrl = ["https://via.placeholder.com/150"];
+      return res.json({ success: false, message: "cannot upload" });
     }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
     
-    // Tìm store của người dùng đã được phê duyệt
+    // Find the store for the user that is approved
     const store = await storeModel.findOne({ ownerId: userId, status: "approved" });
     if (!store) {
       return res.json({ success: false, message: "User doesn't have an approved store" });
     }
     
-    // Xử lý trường colors: nếu nhận được dưới dạng JSON string từ client thì parse, nếu đã là mảng thì giữ nguyên
+    // Process the colors field: if received as a JSON string then parse it, otherwise split by comma
     let colorsData = [];
     try {
       colorsData = typeof colors === "string" ? JSON.parse(colors) : colors;
     } catch (e) {
-      // Nếu lỗi, có thể thử chuyển đổi chuỗi bằng split (nếu không phải JSON)
-      colorsData = colors.split(",").map(c => c.trim());
+      colorsData = colors.split(",").map((c) => c.trim());
     }
     
     const productData = {
@@ -52,7 +49,7 @@ export const createProduct = async (req, res) => {
       description,
       price,
       category,
-      popular: popular === "true" || popular === true ? true : false,
+      popular: popular === "true" || popular === true,
       colors: colorsData,
       image: imagesUrl,
       date: Date.now(),

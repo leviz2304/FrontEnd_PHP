@@ -6,8 +6,6 @@ const addProduct = async (req, res) => {
     try {
       const { name, description, price, category, colors, popular } = req.body;
       const { token } = req.headers;
-  
-      // Process uploaded images
       const image1 = req.files?.image1?.[0];
       const image2 = req.files?.image2?.[0];
       const image3 = req.files?.image3?.[0];

@@ -5,7 +5,7 @@ module.exports = {
         "@babel/preset-env",
         {
           targets: {
-            node: "current" // Đảm bảo rằng Babel chuyển đổi code cho phiên bản Node hiện tại
+            node: "current"
           }
         }
       ]

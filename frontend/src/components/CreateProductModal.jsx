@@ -3,20 +3,54 @@ import React, { useState } from "react";
 import upload_icon from "../assets/upload.png";
 import { FaCheck } from "react-icons/fa6";
 
-const CreateProductModal = ({ createProductData, setCreateProductData, handleSaveNewProduct, onCancel }) => {
+const CreateProductModal = ({
+  createProductData,
+  setCreateProductData,
+  handleSaveNewProduct,
+  onCancel,
+}) => {
   const [images, setImages] = useState({
     image1: null,
     image2: null,
     image3: null,
     image4: null,
   });
+  const [loading, setLoading] = useState(false);
 
   const handleImageChange = (e, key) => {
     setImages((prev) => ({ ...prev, [key]: e.target.files[0] }));
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const colorsArray = createProductData.colors.split(",").map((c) => c.trim());
+    const formData = new FormData();
+    formData.append("name", createProductData.name);
+    formData.append("description", createProductData.description);
+    formData.append("price", createProductData.price);
+    formData.append("category", createProductData.category);
+    formData.append("popular", createProductData.popular);
+    formData.append("colors", JSON.stringify(colorsArray));
+
+    Object.keys(images).forEach((key) => {
+      if (images[key]) {
+        formData.append(key, images[key]);
+      }
+    });
+
+    setLoading(true);
+    try {
+      await handleSaveNewProduct(formData);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <form
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onSubmit={handleSubmit}
+    >
       <div className="bg-white p-6 rounded-xl w-[90%] max-w-md">
         <h3 className="h3 mb-4">Add New Product</h3>
         <div className="flex flex-col gap-y-4">
@@ -119,23 +153,15 @@ const CreateProductModal = ({ createProductData, setCreateProductData, handleSav
           </div>
         </div>
         <div className="flex justify-end gap-4 mt-6">
-          <button onClick={onCancel} className="btn-white rounded px-3 py-1">
+          <button type="button" onClick={onCancel} className="btn-white rounded px-3 py-1">
             Cancel
           </button>
-          <button
-            onClick={() => {
-              // Chuyển đổi chuỗi màu thành mảng và gọi handleSaveNewProduct
-              const colorsArray = createProductData.colors.split(",").map(c => c.trim());
-handleSaveNewProduct({ ...images, ...{ ...createProductData, colors: JSON.stringify(colorsArray) } });
-
-            }}
-            className="btn-secondary rounded px-3 py-1"
-          >
-            Save
+          <button type="submit" className="btn-secondary rounded px-3 py-1" disabled={loading}>
+            {loading ? "Saving..." : "Save"}
           </button>
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 

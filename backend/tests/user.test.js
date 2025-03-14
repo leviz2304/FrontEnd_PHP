@@ -1,8 +1,7 @@
-// tests/user.test.js
 import request from "supertest";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-dotenv.config({ path: ".env.test" }); // Nạp biến môi trường từ file .env.test
+dotenv.config({ path: ".env.test" }); 
 import app from "../server.js";
 
 describe("User Authentication", () => {

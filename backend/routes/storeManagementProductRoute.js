@@ -1,6 +1,6 @@
 // src/routes/storeManagementProductRoute.js
 import express from "express";
-import multer from "multer";
+import upload from "../middleware/multer.js";
 import {
   createProduct,
   listProducts,
@@ -10,13 +10,6 @@ import {
 import storeAuth from "../middleware/storeAuth.js";
 
 const router = express.Router();
-
-const storage = multer.diskStorage({
-  filename: function (req, file, callback) {
-    callback(null, file.originalname);
-  },
-});
-const upload = multer({ storage });
 
 router.post(
   "/products",
@@ -31,11 +24,7 @@ router.post(
 );
 
 router.get("/products", storeAuth, listProducts);
-
-// Cập nhật sản phẩm (PUT)
 router.put("/products/:productId", storeAuth, updateProduct);
-
-// Xoá sản phẩm (DELETE)
 router.delete("/products/:productId", storeAuth, deleteProduct);
 
 export default router;
