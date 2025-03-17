@@ -1,0 +1,175 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+adminAuth.js
+auth.js
+multer.js
+storeAuth.js
+
+================================================================
+Files
+================================================================
+
+================
+File: adminAuth.js
+================
+import jwt from "jsonwebtoken";
+import userModel from "../models/userModel.js";
+import roleModel from "../models/roleModel.js";
+
+const adminAuth = async (req, res, next) => {
+  try {
+    const { token } = req.headers;
+    if (!token) {
+      return res.json({ success: false, message: "Not Authorized. Please login again." });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    
+    // Find the user and verify the admin role
+    const adminUser = await userModel.findById(userId);
+    if (!adminUser) {
+      return res.json({ success: false, message: "User not found." });
+    }
+    
+    const role = await roleModel.findById(adminUser.roleId);
+    if (!role || role.roleName !== "admin") {
+      return res.json({ success: false, message: "Not Authorized. Admin only." });
+    }
+    
+    next();
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export default adminAuth;
+
+================
+File: auth.js
+================
+import jwt from "jsonwebtoken"
+
+const authUser = async (req, res, next) => {
+    const { token } = req.headers
+
+    if (!token) {
+        return res.json({ success: false, message: "Not Authorized Please Login again" })
+    }
+    try {
+        const token_decode = jwt.verify(token, process.env.JWT_SECRET)
+        req.body.userId = token_decode.id
+        next()
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+export default authUser
+
+================
+File: multer.js
+================
+// src/middleware/multer.js
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Đảm bảo thư mục lưu tạm tồn tại
+const uploadDir = "uploads";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+  destination: function (req, file, callback) {
+    callback(null, uploadDir);
+  },
+  filename: function (req, file, callback) {
+    // Sử dụng timestamp để tránh trùng lặp
+    callback(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
+export default upload;
+
+================
+File: storeAuth.js
+================
+import jwt from "jsonwebtoken";
+import storeModel from "../models/storeModel.js";
+
+const storeAuth = async (req, res, next) => {
+  try {
+    const { token } = req.headers;
+    if (!token) {
+      return res.json({ success: false, message: "không có token" });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId, status: "approved" });
+    if (!store) {
+      return res.json({ success: false, message: "You do not have an approved store" });
+    }
+    req.store = store;
+    next();
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+export default storeAuth;
+
+
+
+================================================================
+End of Codebase
+================================================================

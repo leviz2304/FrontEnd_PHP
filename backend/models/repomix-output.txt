@@ -1,0 +1,322 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+followerModel.js
+messageModel.js
+orderModel.js
+productModel.js
+roleModel.js
+storeModel.js
+storeNotificationModel.js
+userModel.js
+userNotificationModel.js
+
+================================================================
+Files
+================================================================
+
+================
+File: followerModel.js
+================
+import mongoose from "mongoose";
+
+const followerSchema = new mongoose.Schema(
+  {
+    // Relationship to User
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    // Relationship to Store
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+const followerModel = mongoose.models.follower || mongoose.model("Follower", followerSchema);
+
+
+export default followerModel;
+
+================
+File: messageModel.js
+================
+import mongoose from "mongoose";
+
+const messageSchema = new mongoose.Schema(
+  {
+    content: {
+      type: String,
+      required: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+    },
+    senderType: {
+      type: String,
+      enum: ["user", "store", "admin"],
+      required: true,
+    },
+    userNotificationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserNotification",
+    },
+  },
+  { minimize: false }
+);
+const messageModel = mongoose.models.message || mongoose.model("Message", messageSchema);
+
+export default messageModel;
+
+================
+File: orderModel.js
+================
+import mongoose from "mongoose"
+
+const orderSchema = new mongoose.Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      },
+      storeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Store",
+        required: true,
+      },
+    items: { type: Array, required: true },
+    amount: { type: Number, required: true },
+    address: { type: Object, required: true },
+    status: { type: String, required: true, default: "Order Placed" },
+    paymentMethod: { type: String, required: true },
+    payment: { type: Boolean, required: true, default: false },
+    date: { type: Number, required: true },
+   
+    
+
+})
+
+const orderModel = mongoose.models.order || mongoose.model('order', orderSchema)
+
+export default orderModel
+
+================
+File: productModel.js
+================
+import mongoose from "mongoose";
+
+const productSchema = new mongoose.Schema({
+      storeId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Store",
+        required: true,
+      },
+     
+    name:{type:String, required:true},
+    description:{type:String, required:true},
+    price:{type:Number, required:true},
+    image:{type:Array, required:true},
+    category:{type:String, required:true},
+    colors:{type:Array, required:true},
+    popular:{type:Boolean},
+    date:{type:Number, required:true},
+})
+
+const productModel = mongoose.models.product || mongoose.model("product", productSchema)
+
+export default productModel
+
+================
+File: roleModel.js
+================
+import mongoose from "mongoose";
+
+const roleSchema = new mongoose.Schema(
+  {
+    roleName: {
+      type: String,
+      required: true,
+      unique: true, // e.g. 'admin', 'user', etc.
+    },
+  },
+  { timestamps: true }
+);
+
+const roleModel = mongoose.models.role || mongoose.model("Role", roleSchema);
+export default roleModel
+
+================
+File: storeModel.js
+================
+import mongoose from "mongoose";
+
+const storeSchema = new mongoose.Schema(
+  {
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    storeName: {
+      type: String,
+      required: true,
+    },
+    storeAddress: {
+      type: String,
+      required: false,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "approved"],
+      default: "pending",
+    },
+    // Thêm trường avatar cho store
+    storeLogo: {
+      type: String,
+      default: "",
+    },
+  },
+  { timestamps: true }
+);
+
+const storeModel = mongoose.models.store || mongoose.model("Store", storeSchema);
+export default storeModel;
+
+================
+File: storeNotificationModel.js
+================
+import mongoose from "mongoose";
+
+const storeNotificationSchema = new mongoose.Schema(
+  {
+    // Relationship to Store
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { minimize: false }
+);
+const storeNotificationModel = mongoose.models.storeNotification || mongoose.model("StoreNotification", storeNotificationSchema);
+export default storeNotificationModel
+
+================
+File: userModel.js
+================
+import mongoose from "mongoose";
+
+const userSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    cartData: { type: Object, default: {} },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      roleId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Role",
+        required: true,
+      },
+}, { minimize: false })
+
+const userModel = mongoose.models.user || mongoose.model("user", userSchema)
+
+export default userModel
+
+================
+File: userNotificationModel.js
+================
+import mongoose from "mongoose";
+
+const userNotificationSchema = new mongoose.Schema(
+  {
+    // Relationship to User
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Store",
+    },
+    // Relationship to Order (optional if needed by your logic)
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+    },
+  },
+  { timestamps: true }
+);
+const userNotificationModel = mongoose.models.userNotification || mongoose.model("UserNotification", userNotificationSchema);
+export default userNotificationModel
+
+
+
+================================================================
+End of Codebase
+================================================================

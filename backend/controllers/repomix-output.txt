@@ -1,0 +1,875 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+cartController.js
+orderController.js
+productController.js
+storeController.js
+storeManagementController.js
+storeManagementProductController.js
+userController.js
+
+================================================================
+Files
+================================================================
+
+================
+File: cartController.js
+================
+import userModel from "../models/userModel.js"
+
+
+const addToCart = async (req, res) => {
+    try {
+        const { userId, itemId, color } = req.body
+        const userData = await userModel.findById(userId)
+
+        let cartData = await userData.cartData
+
+        if (cartData[itemId]) {
+            if (cartData[itemId][color]) {
+                cartData[itemId][color] += 1
+            } else {
+                cartData[itemId][color] = 1
+            }
+        } else {
+            cartData[itemId] = {}
+            cartData[itemId][color] = 1
+        }
+
+        await userModel.findByIdAndUpdate(userId, { cartData })
+        res.json({ success: true, message: "Added to Cart" })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+
+// CONTROLLER FUNCTION FOR UPADTING USER CART
+const updateCart = async (req, res) => {
+    try {
+        const { userId, itemId, color, quantity } = req.body
+        const userData = await userModel.findById(userId)
+
+        let cartData = await userData.cartData
+
+        cartData[itemId][color] = quantity
+
+        await userModel.findByIdAndUpdate(userId, { cartData })
+        res.json({ success: true, message: "Cart Updated" })
+
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+
+    }
+}
+
+
+// CONTROLLER FUNCTION FOR GETTING USER CART DATA
+const getUserCart = async (req, res) => {
+    try {
+        const { userId } = req.body
+        const userData = await userModel.findById(userId)
+
+        let cartData = await userData.cartData
+        res.json({ success: true, cartData })
+    } catch (error) {
+
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+export { addToCart, updateCart, getUserCart }
+
+================
+File: orderController.js
+================
+// import orderModel from "../models/orderModel.js"
+// import userModel from "../models/userModel.js"
+// import Stripe from 'stripe'
+
+
+// const currency = "pkr"
+// const deliveryCharges = 10
+
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+
+
+// // CONTROLLER FUNCTION FOR PLACING ORDER USING COD METHOD
+// const placeOrder = async (req, res) => {
+//     try {
+//         const { userId, items, amount, address } = req.body
+
+//         const orderData = {
+//             userId,
+//             items,
+//             amount,
+//             address,
+//             paymentMethod: "COD",
+//             payment: false,
+//             date: Date.now()
+//         }
+
+//         const newOrder = new orderModel(orderData)
+//         await newOrder.save()
+
+//         await userModel.findByIdAndUpdate(userId, { cartData: {} })
+
+//         res.json({ success: true, message: "Order Placed" })
+
+//     } catch (error) {
+//         console.log(error)
+//         res.json({ success: false, message: error.message })
+//     }
+// }
+
+
+// // CONTROLLER FUNCTION FOR PLACING ORDER USING STRIPE METHOD
+// const placeOrderStripe = async (req, res) => {
+//     try {
+//         const { userId, items, amount, address } = req.body
+//         const { origin } = req.headers
+
+//         const orderData = {
+//             userId,
+//             items,
+//             amount,
+//             address,
+//             paymentMethod: "Stripe",
+//             payment: false,
+//             date: Date.now()
+//         }
+
+//         const newOrder = new orderModel(orderData)
+//         await newOrder.save()
+
+//         const line_items = items.map((item) => ({
+//             price_data: {
+//                 currency: currency,
+//                 product_data: {
+//                     name: item.name
+//                 },
+//                 unit_amount: item.price * 100 * 277 // converting into pkr currency
+//             },
+//             quantity: item.quantity
+//         }))
+//         line_items.push({
+//             price_data: {
+//                 currency: currency,
+//                 product_data: {
+//                     name: 'Delivery charges'
+//                 },
+//                 unit_amount: deliveryCharges * 100 * 277
+//             },
+//             quantity: 1
+//         })
+
+//         const session = await stripe.checkout.sessions.create({
+//             success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
+//             cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
+//             line_items,
+//             mode: 'payment'
+//         })
+//         res.json({ success: true, session_url: session.url })
+
+//     } catch (error) {
+//         console.log(error)
+//         res.json({ success: false, message: error.message })
+//     }
+// }
+
+// // CONTROLLER FUNCTION FOR VERIFYING STRIPE (THIS IS A TEMPORARY METHOD FOR TEST )
+// const verifyStripe = async (req, res) => {
+//     const { orderId, success, userId } = req.body
+
+//     try {
+//         if (success === "true") {
+//             await orderModel.findByIdAndUpdate(orderId, { payment: true })
+//             await userModel.findByIdAndUpdate(userId, { cartData: {} })
+            
+//             res.json({success: true})
+//         } else {
+//             await orderModel.findByIdAndDelete(orderId)
+//             res.json({success:false})
+//         }
+//     } catch (error) {
+//         console.log(error)
+//         res.json({ success: false, message: error.message })
+
+//     }
+// }
+
+
+
+// // CONTROLLER FUNCTION FOR GETTING ALL ORDERS DATA FOR ADMIN PANEL
+// const allOrders = async (req, res) => {
+//     try {
+//         const orders = await orderModel.find({})
+//         res.json({ success: true, orders })
+//     } catch (error) {
+//         console.log(error)
+//         res.json({ success: false, message: error.message })
+//     }
+
+// }
+
+
+// // CONTROLLER FUNCTION FOR GETTING USER ORDERS DATA FOR FRONTEND
+// const userOrders = async (req, res) => {
+//     try {
+//         const { userId } = req.body
+
+//         const orders = await orderModel.find({ userId })
+//         res.json({ success: true, orders })
+//     } catch (error) {
+//         console.log(error)
+//         res.json({ success: false, message: error.message })
+//     }
+// }
+
+
+
+// // CONTROLLER FUNCTION FOR UPDATING USER ORDER STATUS
+// const updateStatus = async (req, res) => {
+//     try {
+//         const { orderId, status } = req.body
+
+//         await orderModel.findByIdAndUpdate(orderId, { status })
+//         res.json({ success: true, message: "Status Updated" })
+//     } catch (error) {
+
+//         console.log(error)
+//         res.json({ success: false, message: error.message })
+//     }
+// }
+
+// export { placeOrder, placeOrderStripe, allOrders, userOrders, updateStatus, verifyStripe }
+
+================
+File: productController.js
+================
+import { v2 as cloudinary } from "cloudinary"
+import productModel from "../models/productModel.js";
+import storeModel from "../models/storeModel.js";
+import jwt from "jsonwebtoken";
+const addProduct = async (req, res) => {
+    try {
+      const { name, description, price, category, colors, popular } = req.body;
+      const { token } = req.headers;
+      const image1 = req.files?.image1?.[0];
+      const image2 = req.files?.image2?.[0];
+      const image3 = req.files?.image3?.[0];
+      const image4 = req.files?.image4?.[0];
+  
+      const images = [image1, image2, image3, image4].filter((item) => item !== undefined);
+      let imagesUrl;
+      if (images.length > 0) {
+        imagesUrl = await Promise.all(
+          images.map(async (item) => {
+            const result = await cloudinary.uploader.upload(item.path, { resource_type: "image" });
+            return result.secure_url;
+          })
+        );
+      } else {
+        imagesUrl = ["https://via.placeholder.com/150"];
+      }
+  
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.id;
+  
+      // Find the store owned by the user that is approved
+      const store = await storeModel.findOne({ ownerId: userId, status: "approved" });
+      if (!store) {
+        return res.json({ success: false, message: "User doesn't have an approved store" });
+      }
+  
+      const productData = {
+        storeId: store._id,
+        name,
+        description,
+        price,
+        category,
+        popular: popular === "true" ? true : false,
+        colors: colors ? JSON.parse(colors) : [],
+        image: imagesUrl,
+        date: Date.now(),
+      };
+  
+      console.log(productData);
+  
+      const product = new productModel(productData);
+      await product.save();
+  
+      res.json({ success: true, message: "Product Added" });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false, message: error.message });
+    }
+  };
+
+const removeProduct = async (req, res) => {
+    try {
+        await productModel.findByIdAndDelete(req.body.id)
+        res.json({ success: true, message: "Product Removed" })
+    } catch (error) {
+
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+
+const listProducts = async (req, res) => {
+    try {
+        const products = await productModel.find({})
+        res.json({ success: true, products })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+
+    }
+}
+
+const singleProduct = async (req, res) => {
+    try {
+        const { productId } = req.body
+        const product = await productModel.findById(productId)
+        res.json({ success: true, product })
+
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+
+    }
+}
+
+export { addProduct, removeProduct, listProducts, singleProduct }
+
+================
+File: storeController.js
+================
+import storeModel from "../models/storeModel.js";
+import userModel from "../models/userModel.js";
+import jwt from "jsonwebtoken";
+
+export const requestStore=async(req,res)=>{
+    try{
+        const {storeName,storeAddress}=req.body;
+        const { token } = req.headers;
+        if (!token) {
+            return res.json({ success: false, message: "Not Authorized. Please login again." });
+            }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+        const newStore = new storeModel({
+            ownerId: userId,
+            storeName,
+            storeAddress,
+            status: "pending",
+          });
+          await newStore.save();
+          res.json({ success: true, message: "Store request sent successfully" });
+    }catch(error){
+        console.log(error);
+    res.json({ success: false, message: error.message });
+    }
+}
+export const getPendingStores = async (req, res) => {
+    try {
+      const pendingStores = await storeModel.find({ status: "pending" });
+      res.json({ success: true, pendingStores });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false, message: error.message });
+    }
+  };
+  
+  export const approveStore = async (req, res) => {
+    try {
+      const { storeId } = req.body;
+      const store = await storeModel.findById(storeId);
+      if (!store) {
+        return res.json({ success: false, message: "Store not found" });
+      }
+      // Cập nhật trạng thái thành "approved"
+      store.status = "approved";
+      await store.save();
+  
+      res.json({ success: true, message: "Store approved successfully" });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false, message: error.message });
+    }
+  };
+  export const getSingleStore = async (req, res) => {
+    try {
+      const { storeId } = req.query;
+      if (!storeId) {
+        return res.json({ success: false, message: "Store ID is required" });
+      }
+      const store = await storeModel.findById(storeId);
+      if (!store) {
+        return res.json({ success: false, message: "Store not found" });
+      }
+      res.json({ success: true, store });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false, message: error.message });
+    }
+  };
+
+================
+File: storeManagementController.js
+================
+import { v2 as cloudinary } from "cloudinary";
+import jwt from "jsonwebtoken";
+import storeModel from "../models/storeModel.js";
+import productModel from "../models/productModel.js";
+
+// Hàm cập nhật thông tin store (tên, địa chỉ)
+export const updateStoreInfo = async (req, res) => {
+  try {
+    const { storeName, storeAddress } = req.body;
+    const { token } = req.headers;
+    if (!token) {
+      return res.json({ success: false, message: "Không có token, vui lòng đăng nhập lại" });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store không tồn tại" });
+    }
+    if (storeName) store.storeName = storeName;
+    if (storeAddress) store.storeAddress = storeAddress;
+    await store.save();
+    res.json({ success: true, message: "Cập nhật thông tin store thành công", store });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Hàm cập nhật avatar (storeLogo) cho store
+export const updateStoreAvatar = async (req, res) => {
+  try {
+    const { token } = req.headers;
+    if (!token) {
+      return res.json({ success: false, message: "Không có token, vui lòng đăng nhập lại" });
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store không tồn tại" });
+    }
+    // Kiểm tra file đã được upload từ middleware multer (req.file)
+    if (!req.file) {
+      return res.json({ success: false, message: "Chưa upload file avatar" });
+    }
+    const result = await cloudinary.uploader.upload(req.file.path, { resource_type: "image" });
+    store.storeLogo = result.secure_url;
+    await store.save();
+    res.json({ success: true, message: "Cập nhật avatar thành công", storeLogo: store.storeLogo });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Hàm lấy danh sách sản phẩm của store hiện tại (dựa theo ownerId)
+export const getStoreProducts = async (req, res) => {
+  try {
+    const { token } = req.headers;
+    if (!token) return res.json({ success: false, message: "Không có token" });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store không tồn tại" });
+    }
+    const products = await productModel.find({ storeId: store._id });
+    res.json({ success: true, products });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Hàm cập nhật sản phẩm của store
+export const updateStoreProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { token } = req.headers;
+    if (!token) return res.json({ success: false, message: "Không có token" });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store không tồn tại" });
+    }
+    // Kiểm tra sản phẩm thuộc store này
+    const product = await productModel.findOne({ _id: productId, storeId: store._id });
+    if (!product) {
+      return res.json({ success: false, message: "Sản phẩm không tồn tại hoặc không thuộc store của bạn" });
+    }
+    // Lấy các trường cần cập nhật từ body
+    const { name, description, price, category, popular, colors } = req.body;
+    if (name) product.name = name;
+    if (description) product.description = description;
+    if (price) product.price = price;
+    if (category) product.category = category;
+    if (popular !== undefined) product.popular = popular;
+    if (colors) product.colors = colors;
+    await product.save();
+    res.json({ success: true, message: "Cập nhật sản phẩm thành công", product });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export const deleteStoreProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { token } = req.headers;
+    if (!token) return res.json({ success: false, message: "Không có token" });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store không tồn tại" });
+    }
+    const product = await productModel.findOneAndDelete({ _id: productId, storeId: store._id });
+    if (!product) {
+      return res.json({ success: false, message: "Sản phẩm không tồn tại hoặc không thuộc store của bạn" });
+    }
+    res.json({ success: true, message: "Xoá sản phẩm thành công" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+export const getMyStore = async (req, res) => {
+    try {
+      if (!req.store) {
+        return res.json({ success: false, message: "Store not found" });
+      }
+      res.json({ success: true, store: req.store });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false, message: error.message });
+    }
+  };
+
+================
+File: storeManagementProductController.js
+================
+import { v2 as cloudinary } from "cloudinary";
+import productModel from "../models/productModel.js";
+import storeModel from "../models/storeModel.js";
+import jwt from "jsonwebtoken";
+export const createProduct = async (req, res) => {
+  try {
+    const { name, description, price, category, colors, popular } = req.body;
+    const { token } = req.headers;
+    
+    // Retrieve uploaded files
+    const image1 = req.files?.image1?.[0];
+    const image2 = req.files?.image2?.[0];
+    const image3 = req.files?.image3?.[0];
+    const image4 = req.files?.image4?.[0];
+    // Filter out any falsy values (null, undefined, etc.)
+    const images = [image1, image2, image3, image4].filter((item) => item);
+    let imagesUrl;
+    if (images.length > 0) {
+      imagesUrl = await Promise.all(
+        images.map(async (item) => {
+          const result = await cloudinary.uploader.upload(item.path, { resource_type: "image" });
+          return result.secure_url;
+        })
+      );
+    } else {
+      return res.json({ success: false, message: "cannot upload" });
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    
+    // Find the store for the user that is approved
+    const store = await storeModel.findOne({ ownerId: userId, status: "approved" });
+    if (!store) {
+      return res.json({ success: false, message: "User doesn't have an approved store" });
+    }
+    
+    // Process the colors field: if received as a JSON string then parse it, otherwise split by comma
+    let colorsData = [];
+    try {
+      colorsData = typeof colors === "string" ? JSON.parse(colors) : colors;
+    } catch (e) {
+      colorsData = colors.split(",").map((c) => c.trim());
+    }
+    
+    const productData = {
+      storeId: store._id,
+      name,
+      description,
+      price,
+      category,
+      popular: popular === "true" || popular === true,
+      colors: colorsData,
+      image: imagesUrl,
+      date: Date.now(),
+    };
+    
+    const product = new productModel(productData);
+    await product.save();
+    
+    res.json({ success: true, message: "Product Added", product });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Lấy danh sách sản phẩm của store (CRUD Read)
+export const listProducts = async (req, res) => {
+  try {
+    const { token } = req.headers;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store not found" });
+    }
+    const products = await productModel.find({ storeId: store._id });
+    res.json({ success: true, products });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Cập nhật sản phẩm (CRUD Update)
+export const updateProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { token } = req.headers;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store not found" });
+    }
+    // Kiểm tra sản phẩm thuộc store của người dùng
+    const product = await productModel.findOne({ _id: productId, storeId: store._id });
+    if (!product) {
+      return res.json({ success: false, message: "Product not found or doesn't belong to your store" });
+    }
+    const { name, description, price, category, popular, colors } = req.body;
+    if (name) product.name = name;
+    if (description) product.description = description;
+    if (price) product.price = price;
+    if (category) product.category = category;
+    if (popular !== undefined) product.popular = popular;
+    
+    // Xử lý colors: nếu là chuỗi thì chuyển thành mảng
+    if (colors) {
+      let colorsData = [];
+      try {
+        colorsData = typeof colors === "string" ? JSON.parse(colors) : colors;
+      } catch (e) {
+        colorsData = colors.split(",").map(c => c.trim());
+      }
+      product.colors = colorsData;
+    }
+    
+    await product.save();
+    res.json({ success: true, message: "Product updated successfully", product });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Xoá sản phẩm (CRUD Delete)
+export const deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { token } = req.headers;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id;
+    const store = await storeModel.findOne({ ownerId: userId });
+    if (!store) {
+      return res.json({ success: false, message: "Store not found" });
+    }
+    const product = await productModel.findOneAndDelete({ _id: productId, storeId: store._id });
+    if (!product) {
+      return res.json({ success: false, message: "Product not found or doesn't belong to your store" });
+    }
+    res.json({ success: true, message: "Product deleted successfully" });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+================
+File: userController.js
+================
+import userModel from "../models/userModel.js";
+import roleModel from "../models/roleModel.js"; // Import the Role model
+import bcrypt from "bcrypt";
+import validator from "validator";
+import jwt from "jsonwebtoken";
+import storeModel from "../models/storeModel.js";
+const createToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET);
+};
+
+// Regular user login
+const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await userModel.findOne({ email });
+        if (!user) {
+            return res.json({ success: false, message: "User doesn't exist" });
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (isMatch) {
+            const token = createToken(user._id);
+            res.json({ success: true, token });
+        } else {
+            res.json({ success: false, message: "Invalid Credentials" });
+        }
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Regular user registration; always assigns the "user" role
+const registerUser = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const exists = await userModel.findOne({ email });
+        if (exists) {
+            return res.json({ success: false, message: "User already exists" });
+        }
+        if (!validator.isEmail(email)) {
+            return res.json({ success: false, message: "Please enter a valid email" });
+        }
+        if (password.length < 8) {
+            return res.json({ success: false, message: "Please enter a strong password" });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Look up the "user" role. Create it if it doesn't exist.
+        let userRole = await roleModel.findOne({ roleName: "user" });
+        if (!userRole) {
+            userRole = await roleModel.create({ roleName: "user" });
+        }
+
+        const newUser = new userModel({
+            name: name,
+            email: email,
+            password: hashedPassword,
+            roleId: userRole._id, // assign the "user" role
+        });
+
+        const user = await newUser.save();
+        const token = createToken(user._id);
+        res.json({ success: true, token });
+    } catch (error) {
+        console.log(error);
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Admin login: verifies that the account exists, password matches, and the role is "admin"
+const adminLogin = async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      const adminUser = await userModel.findOne({ email });
+      if (!adminUser) {
+        return res.json({ success: false, message: "Admin not found" });
+      }
+      const isMatch = await bcrypt.compare(password, adminUser.password);
+      if (!isMatch) {
+        return res.json({ success: false, message: "Invalid Credentials" });
+      }
+      
+      // Verify the user's role from the Role collection
+      const role = await roleModel.findById(adminUser.roleId);
+      // Also, check if the user owns an approved store
+      const approvedStore = await storeModel.findOne({ ownerId: adminUser._id, status: "approved" });
+      
+      // Allow login if either the role is admin OR if the user has an approved store
+      if (role.roleName !== "admin" && !approvedStore) {
+        return res.json({ success: false, message: "Not an admin account or approved store owner" });
+      }
+      
+      const token = createToken(adminUser._id);
+      res.json({ success: true, token });
+    } catch (error) {
+      console.log(error);
+      res.json({ success: false, message: error.message });
+    }
+  };
+
+export { loginUser, registerUser, adminLogin };
+
+
+
+================================================================
+End of Codebase
+================================================================

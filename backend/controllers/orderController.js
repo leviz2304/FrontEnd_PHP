@@ -1,162 +1,127 @@
-// import orderModel from "../models/orderModel.js"
-// import userModel from "../models/userModel.js"
-// import Stripe from 'stripe'
+import moment from "moment";
+import queryString from "query-string";
+import crypto from "crypto";
+import orderModel from "../models/orderModel.js";
+import userModel from "../models/userModel.js";
 
+const sortObject = (obj) => {
+  const sorted = {};
+  Object.keys(obj)
+    .sort()
+    .forEach((key) => {
+      sorted[key] = obj[key];
+    });
+  return sorted;
+};
+const singleProduct = async (req, res) => {
+    try {
+        const { productId } = req.body
+        const product = await productModel.findById(productId)
+        res.json({ success: true, product })
 
-// const currency = "pkr"
-// const deliveryCharges = 10
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
 
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+    }
+}
+export const getOrderByUserId=async(req,res)=>{
+   
+    try{
+        const {userId}=req.body;
+        const orders=await orderModel.find({userId});
+        res.json({success:true,orders})
+    }catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
 
+    }
+}
 
-// // CONTROLLER FUNCTION FOR PLACING ORDER USING COD METHOD
-// const placeOrder = async (req, res) => {
-//     try {
-//         const { userId, items, amount, address } = req.body
+// Controller cho COD
+export const placeOrder = async (req, res) => {
+  try {
+    const { userId, storeId, items, amount, address } = req.body;
 
-//         const orderData = {
-//             userId,
-//             items,
-//             amount,
-//             address,
-//             paymentMethod: "COD",
-//             payment: false,
-//             date: Date.now()
-//         }
+    const orderData = {
+      userId,
+      storeId,
+      items,
+      amount,
+      address,
+      paymentMethod: "COD",
+      payment: false, // COD chưa được thanh toán ngay lúc đặt hàng
+      date: Date.now(),
+    };
 
-//         const newOrder = new orderModel(orderData)
-//         await newOrder.save()
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
 
-//         await userModel.findByIdAndUpdate(userId, { cartData: {} })
+    // Xóa giỏ hàng trong DB sau khi đặt hàng thành công
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-//         res.json({ success: true, message: "Order Placed" })
+    res.json({ success: true, message: "Order placed successfully." });
+  } catch (error) {
+    console.error(error);
+    res.json({ success: false, message: error.message });
+  }
+};
 
-//     } catch (error) {
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-//     }
-// }
+// Controller cho VNPAY
+export const placeOrderVNPAY = async (req, res) => {
+  try {
+    const { userId, storeId, items, amount, address } = req.body;
 
+    const orderData = {
+      userId,
+      storeId,
+      items,
+      amount,
+      address,
+      paymentMethod: "VNPAY",
+      payment: false,
+      date: Date.now(),
+    };
 
-// // CONTROLLER FUNCTION FOR PLACING ORDER USING STRIPE METHOD
-// const placeOrderStripe = async (req, res) => {
-//     try {
-//         const { userId, items, amount, address } = req.body
-//         const { origin } = req.headers
+    const newOrder = new orderModel(orderData);
+    await newOrder.save();
 
-//         const orderData = {
-//             userId,
-//             items,
-//             amount,
-//             address,
-//             paymentMethod: "Stripe",
-//             payment: false,
-//             date: Date.now()
-//         }
+    let vnp_Params = {
+      vnp_Version: "2.0.0",
+      vnp_Command: "pay",
+      vnp_TmnCode: process.env.VNP_TMN_CODE,
+      vnp_Amount: amount * 100, // Nếu theo yêu cầu là nhân 100, nếu không thì sửa lại
+      vnp_CurrCode: "VND",
+      vnp_TxnRef: newOrder._id.toString(), // Unique transaction reference (order ID)
+      vnp_OrderInfo: `Payment for order ${newOrder._id}`,
+      vnp_OrderType: "other",
+      vnp_Locale: "vn",
+      vnp_ReturnUrl: process.env.VNP_RETURN_URL, // Return URL sau khi thanh toán
+      vnp_IpAddr: req.ip,
+      vnp_CreateDate: moment().format("YYYYMMDDHHmmss"),
+    };
 
-//         const newOrder = new orderModel(orderData)
-//         await newOrder.save()
+    const sortedParams = sortObject(vnp_Params);
+    const signData = queryString.stringify(sortedParams, { encode: false });
+    const secureHash = crypto
+      .createHmac("sha512", process.env.VNP_HASH_SECRET)
+      .update(signData)
+      .digest("hex");
 
-//         const line_items = items.map((item) => ({
-//             price_data: {
-//                 currency: currency,
-//                 product_data: {
-//                     name: item.name
-//                 },
-//                 unit_amount: item.price * 100 * 277 // converting into pkr currency
-//             },
-//             quantity: item.quantity
-//         }))
-//         line_items.push({
-//             price_data: {
-//                 currency: currency,
-//                 product_data: {
-//                     name: 'Delivery charges'
-//                 },
-//                 unit_amount: deliveryCharges * 100 * 277
-//             },
-//             quantity: 1
-//         })
+    // Build the payment URL
+    const vnpUrl =
+      process.env.VNP_URL +
+      "?" +
+      queryString.stringify(sortedParams) +
+      `&vnp_SecureHash=${secureHash}`;
 
-//         const session = await stripe.checkout.sessions.create({
-//             success_url: `${origin}/verify?success=true&orderId=${newOrder._id}`,
-//             cancel_url: `${origin}/verify?success=false&orderId=${newOrder._id}`,
-//             line_items,
-//             mode: 'payment'
-//         })
-//         res.json({ success: true, session_url: session.url })
+    // Ở VNPAY, bạn thường không xóa giỏ hàng ngay vì cần chờ callback từ VNPAY xác nhận thanh toán.
+    // Tuy nhiên, nếu bạn muốn xóa giỏ hàng ngay sau khi tạo đơn hàng, bạn có thể uncomment dòng bên dưới:
+    await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
-//     } catch (error) {
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-//     }
-// }
-
-// // CONTROLLER FUNCTION FOR VERIFYING STRIPE (THIS IS A TEMPORARY METHOD FOR TEST )
-// const verifyStripe = async (req, res) => {
-//     const { orderId, success, userId } = req.body
-
-//     try {
-//         if (success === "true") {
-//             await orderModel.findByIdAndUpdate(orderId, { payment: true })
-//             await userModel.findByIdAndUpdate(userId, { cartData: {} })
-            
-//             res.json({success: true})
-//         } else {
-//             await orderModel.findByIdAndDelete(orderId)
-//             res.json({success:false})
-//         }
-//     } catch (error) {
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-
-//     }
-// }
-
-
-
-// // CONTROLLER FUNCTION FOR GETTING ALL ORDERS DATA FOR ADMIN PANEL
-// const allOrders = async (req, res) => {
-//     try {
-//         const orders = await orderModel.find({})
-//         res.json({ success: true, orders })
-//     } catch (error) {
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-//     }
-
-// }
-
-
-// // CONTROLLER FUNCTION FOR GETTING USER ORDERS DATA FOR FRONTEND
-// const userOrders = async (req, res) => {
-//     try {
-//         const { userId } = req.body
-
-//         const orders = await orderModel.find({ userId })
-//         res.json({ success: true, orders })
-//     } catch (error) {
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-//     }
-// }
-
-
-
-// // CONTROLLER FUNCTION FOR UPDATING USER ORDER STATUS
-// const updateStatus = async (req, res) => {
-//     try {
-//         const { orderId, status } = req.body
-
-//         await orderModel.findByIdAndUpdate(orderId, { status })
-//         res.json({ success: true, message: "Status Updated" })
-//     } catch (error) {
-
-//         console.log(error)
-//         res.json({ success: false, message: error.message })
-//     }
-// }
-
-// export { placeOrder, placeOrderStripe, allOrders, userOrders, updateStatus, verifyStripe }
-
-
+    return res.json({ success: true, vnpUrl });
+  } catch (error) {
+    console.error(error);
+    return res.json({ success: false, message: error.message });
+  }
+};

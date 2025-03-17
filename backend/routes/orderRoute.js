@@ -1,22 +1,14 @@
-// import express from "express"
-// import adminAuth from "../middleware/adminAuth.js"
-// import { allOrders, placeOrder, placeOrderStripe, updateStatus, userOrders, verifyStripe } from "../controllers/orderController.js"
-// import authUser from "../middleware/auth.js"
+import express from "express";
+import { placeOrder, placeOrderVNPAY } from "../controllers/orderController.js";
+import authUser from "../middleware/auth.js";
+import storeAuth from "../middleware/storeAuth.js";
+import { getOrderByStoreId } from "../controllers/storeManagementController.js";
+import { getOrderByUserId } from "../controllers/orderController.js";
+const orderRouter = express.Router();
+orderRouter.get("/storeorder",authUser,getOrderByStoreId)
+orderRouter.post("/place", authUser, placeOrder);
+orderRouter.get("/userorder",authUser,getOrderByUserId)
 
-// const orderRouter = express.Router()
+orderRouter.post("/vnpay", authUser, placeOrderVNPAY);
 
-// // FOR ADMIN
-// orderRouter.post('/list', adminAuth, allOrders)
-// orderRouter.post('/status', adminAuth, updateStatus)
-
-// // FOR PAYMENT 
-// orderRouter.post('/place', authUser, placeOrder)
-// orderRouter.post('/stripe', authUser, placeOrderStripe)
-
-// // FOR USER
-// orderRouter.post('/userorders', authUser, userOrders)
-
-// // VERIFY STRIPE METHOD
-// orderRouter.post('/verifyStripe', authUser, verifyStripe)
-
-// export default orderRouter
+export default orderRouter;

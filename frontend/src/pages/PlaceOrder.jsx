@@ -7,7 +7,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const PlaceOrder = () => {
-  const [method, setMethod] = useState("cod");
+  const [method, setMethod] = useState("cod"); // Available methods: "cod" and "vnpay"
   const {
     navigate,
     products,
@@ -15,7 +15,6 @@ const PlaceOrder = () => {
     delivery_charges,
     cartItems,
     setCartItems,
-    addToCart,
     getCartAmount,
     token,
     backendUrl,
@@ -34,73 +33,112 @@ const PlaceOrder = () => {
   });
 
   const onChangeHandler = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
-
+    const { name, value } = event.target;
     setFormData((data) => ({ ...data, [name]: value }));
   };
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+    // Simple validation: ensure required fields are not empty
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.street ||
+      !formData.city ||
+      !formData.state ||
+      !formData.zipcode ||
+      !formData.country ||
+      !formData.phone
+    ) {
+      toast.error("Please fill in all delivery information fields.");
+      return;
+    }
+
     try {
       let orderItems = [];
-
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            const itemInfo = structuredClone(
-              products.find((product) => product._id === items)
+      // Build order items from cartItems
+      for (const productId in cartItems) {
+        for (const color in cartItems[productId]) {
+          if (cartItems[productId][color] > 0) {
+            const productData = products.find(
+              (product) => product._id === productId
             );
-            if (itemInfo) {
-              itemInfo.color = item;
-              itemInfo.quantity = cartItems[items][item];
-              orderItems.push(itemInfo);
+            if (!productData || !productData.storeId) {
+              toast.error(`Product ${productId} is missing store information.`);
+              return;
             }
+            const item = structuredClone(productData);
+            item.color = color;
+            item.quantity = cartItems[productId][color];
+            orderItems.push(item);
           }
         }
       }
 
-      let orderData = {
+      // Ensure there's at least one product
+      if (orderItems.length === 0) {
+        toast.error("No items in the cart.");
+        return;
+      }
+
+      // Validate that all items come from the same store
+      const storeIds = orderItems.map((item) => item.storeId);
+      const uniqueStoreIds = Array.from(new Set(storeIds));
+      if (uniqueStoreIds.length > 1) {
+        toast.error(
+          "All products must be from the same store. Please place separate orders for different stores."
+        );
+        return;
+      }
+      if (!uniqueStoreIds[0]) {
+        toast.error("Store information is missing for the selected products.");
+        return;
+      }
+
+      // Construct order payload
+      const orderData = {
         address: formData,
         items: orderItems,
         amount: getCartAmount() + delivery_charges,
+        storeId: uniqueStoreIds[0],
       };
 
       switch (method) {
-        // API CALL FOR COD
-        case "cod":
+        case "cod": {
           const response = await axios.post(
-            backendUrl + "/api/order/place",
+            `${backendUrl}/api/order/place`,
             orderData,
             { headers: { token } }
           );
           if (response.data.success) {
             setCartItems({});
-            navigate("/orders");
+            navigate("/order-success");
           } else {
             toast.error(response.data.message);
           }
           break;
-        // API CALL FOR STRIPE
-        case "stripe":
-          const responseStripe = await axios.post(
-            backendUrl + "/api/order/stripe",
+        }
+        case "vnpay": {
+          const response = await axios.post(
+            `${backendUrl}/api/order/vnpay`,
             orderData,
             { headers: { token } }
           );
-          if (responseStripe.data.success) {
-            const { session_url } = responseStripe.data;
-            window.location.replace(session_url);
+          if (response.data.success) {
+            setCartItems({});
+            const { vnpUrl } = response.data;
+            window.location.replace(vnpUrl);
           } else {
-            toast.error(responseStripe.data.message);
+            toast.error(response.data.message);
           }
           break;
-
+        }
         default:
           break;
       }
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error(error.message);
     }
   };
@@ -108,117 +146,157 @@ const PlaceOrder = () => {
   return (
     <div>
       <div className="bg-primary mb-16">
-        {/* CONTAINER */}
         <form onSubmit={onSubmitHandler} className="max-padd-container py-10">
           <div className="flex flex-col xl:flex-row gap-20 xl:gap-28">
-            {/* LEFT SIDE */}
-            <div className="flex-1 flex flex-col gap-3 text-[95%]">
-              <Title title1={"Delivery"} title2={"Information"} />
-              <div className="flex gap-3">
-                <input
-                  onChange={onChangeHandler}
-                  value={formData.firstName}
-                  name="firstName"
-                  type="text"
-                  placeholder="First Name"
-                  className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none w-1/2"
-                  required
-                />
-                <input
-                  onChange={onChangeHandler}
-                  value={formData.lastName}
-                  name="lastName"
-                  type="text"
-                  placeholder="Last Name"
-                  className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none w-1/2"
-                  required
-                />
-              </div>
-              <input
-                onChange={onChangeHandler}
-                value={formData.email}
-                name="email"
-                type="text"
-                placeholder="Email Address"
-                className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none"
-                required
+            {/* Delivery Information Form */}
+            <div className="flex-1">
+              <Title
+                title1="Delivery"
+                title2="Information"
+                titleStyles="text-xl font-bold mb-4"
               />
-              <input
-                onChange={onChangeHandler}
-                value={formData.phone}
-                name="phone"
-                type="text"
-                placeholder="Phone Number"
-                className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none"
-                required
-              />
-              <input
-                onChange={onChangeHandler}
-                value={formData.street}
-                name="street"
-                type="text"
-                placeholder="Street"
-                className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none"
-                required
-              />
-              <div className="flex gap-3">
-                <input
-                  onChange={onChangeHandler}
-                  value={formData.city}
-                  name="city"
-                  type="text"
-                  placeholder="City"
-                  className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none w-1/2"
-                  required
-                />
-                <input
-                  onChange={onChangeHandler}
-                  value={formData.state}
-                  name="state"
-                  type="text"
-                  placeholder="State"
-                  className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none w-1/2"
-                  required
-                />
-              </div>
-              <div className="flex gap-3">
-                <input
-                  onChange={onChangeHandler}
-                  value={formData.zipcode}
-                  name="zipcode"
-                  type="text"
-                  placeholder="Zip Code"
-                  className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none w-1/2"
-                  required
-                />
-                <input
-                  onChange={onChangeHandler}
-                  value={formData.country}
-                  name="country"
-                  type="text"
-                  placeholder="Country"
-                  className="ring-1 ring-slate-900/15 p-1 pl-3 rounded-sm bg-white outline-none w-1/2"
-                  required
-                />
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    id="firstName"
+                    placeholder="First Name"
+                    value={formData.firstName}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    id="lastName"
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    id="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="street" className="block text-sm font-medium text-gray-700">
+                    Street
+                  </label>
+                  <input
+                    type="text"
+                    name="street"
+                    id="street"
+                    placeholder="Street"
+                    value={formData.street}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                    City
+                  </label>
+                  <input
+                    type="text"
+                    name="city"
+                    id="city"
+                    placeholder="City"
+                    value={formData.city}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                    State
+                  </label>
+                  <input
+                    type="text"
+                    name="state"
+                    id="state"
+                    placeholder="State"
+                    value={formData.state}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="zipcode" className="block text-sm font-medium text-gray-700">
+                    Zip Code
+                  </label>
+                  <input
+                    type="text"
+                    name="zipcode"
+                    id="zipcode"
+                    placeholder="Zip Code"
+                    value={formData.zipcode}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                    Country
+                  </label>
+                  <input
+                    type="text"
+                    name="country"
+                    id="country"
+                    placeholder="Country"
+                    value={formData.country}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    name="phone"
+                    id="phone"
+                    placeholder="Phone Number"
+                    value={formData.phone}
+                    onChange={onChangeHandler}
+                    className="w-full p-2 border rounded"
+                  />
+                </div>
               </div>
             </div>
-
-            {/* RIGHT SIDE */}
-            <div className="flex flex-1 flex-col">
+            {/* Order Summary and Payment Method */}
+            <div className="flex-1 flex flex-col">
               <CartTotal />
-              {/* PAYMENT METHOD */}
               <div className="my-6">
-                <h3 className="bold-20 mb-5">
-                  Payment <span>Method</span>
-                </h3>
+                <h3 className="bold-20 mb-5">Payment Method</h3>
                 <div className="flex gap-3">
                   <div
-                    onClick={() => setMethod("stripe")}
+                    onClick={() => setMethod("vnpay")}
                     className={`${
-                      method === "stripe" ? "btn-dark" : "btn-white"
+                      method === "vnpay" ? "btn-dark" : "btn-white"
                     } !py-1 text-xs cursor-pointer`}
                   >
-                    Stripe
+                    VNPAY
                   </div>
                   <div
                     onClick={() => setMethod("cod")}
@@ -230,16 +308,13 @@ const PlaceOrder = () => {
                   </div>
                 </div>
               </div>
-              <div>
-                <button type="submit" className="btn-secondary">
-                  Place Order
-                </button>
-              </div>
+              <button type="submit" className="btn-secondary">
+                Place Order
+              </button>
             </div>
           </div>
         </form>
       </div>
-
       <Footer />
     </div>
   );

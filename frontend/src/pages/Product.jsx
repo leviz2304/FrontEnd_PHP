@@ -14,7 +14,8 @@ import ProductDescription from "../components/ProductDescription";
 import ProductFeatures from "../components/ProductFeatures";
 import RelatedProducts from "../components/RelatedProducts";
 import Footer from "../components/Footer";
-import { backend_url } from "../App";
+
+import ReviewList from "../components/ReviewList";
 
 const Product = () => {
   const { productId } = useParams();
@@ -23,6 +24,7 @@ const Product = () => {
   const [mainImage, setMainImage] = useState("");
   const [selectedColor, setSelectedColor] = useState("");
   const [storeInfo, setStoreInfo] = useState(null);
+  const { backendUrl, token } = useContext(ShopContext); 
 
   // Fetch product data from ShopContext
   const fetchProductData = () => {
@@ -41,7 +43,7 @@ const Product = () => {
   useEffect(() => {
     if (product && product.storeId) {
       axios
-        .get(`${backend_url}/api/store/single?storeId=${product.storeId}`)
+        .get(`${backendUrl}/api/store/single?storeId=${product.storeId}`)
         .then((response) => {
           if (response.data.success) {
             setStoreInfo(response.data.store);
@@ -163,6 +165,7 @@ const Product = () => {
             </div>
           </div>
         </div>
+        
         {storeInfo && (
               <div className="mt-4 p-3 bg-white rounded-lg">
                 <h4 className="bold-18">Seller Information</h4>
@@ -176,7 +179,10 @@ const Product = () => {
                 )}
               </div>
             )}
+                      <ReviewList productId={productId}backendUrl={backendUrl} token={token} />
+
         <RelatedProducts category={product.category} />
+
       </div>
       <Footer />
     </div>

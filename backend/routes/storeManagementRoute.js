@@ -6,8 +6,8 @@ import {
   getStoreProducts,
   updateStoreProduct,
   deleteStoreProduct,
-  getMyStore
-
+  getMyStore,
+  getOrderByStoreId
 } from "../controllers/storeManagementController.js";
 import storeAuth from "../middleware/storeAuth.js";  
 
@@ -30,5 +30,5 @@ router.put("/products/:productId", storeAuth, updateStoreProduct);
 router.get("/my-store", storeAuth, getMyStore);
 
 router.delete("/products/:productId", storeAuth, deleteStoreProduct);
-
+router.get("/storeorders",storeAuth,getOrderByStoreId)
 export default router;

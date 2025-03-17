@@ -14,8 +14,10 @@ import Verify from './pages/Verify'
 import RequestStore from "./pages/RequestStore";
 import StoreManagement from './pages/StoreManagement'
 export const backend_url = import.meta.env.VITE_BACKEND_URL;
-
-
+import OrderFailed from './pages/OrderFailed'
+import OrderSuccess from './pages/OrderSuccess'
+import UserOrders from './pages/UserOrders'
+import OrderDetailsPage from './pages/OrderDetailsPage'
 const App = () => {
   return (
     <main className='overflow-hidden text-tertiary'>
@@ -25,6 +27,9 @@ const App = () => {
         <Route path='/' element={<Home />} />
         <Route path="/request-store" element={<RequestStore />} />
         <Route path="/my-store" element={<StoreManagement />} />
+        <Route path="/order-failed" element={<OrderFailed />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
+        <Route path="/orders" element={<UserOrders />} />
 
         <Route path='/collection' element={<Collection />} />
         <Route path='/blog' element={<Blog />} />

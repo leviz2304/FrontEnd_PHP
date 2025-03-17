@@ -2,7 +2,7 @@ import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
 import storeModel from "../models/storeModel.js";
 import productModel from "../models/productModel.js";
-
+import orderModel from "../models/orderModel.js";
 // Hàm cập nhật thông tin store (tên, địa chỉ)
 export const updateStoreInfo = async (req, res) => {
   try {
@@ -21,6 +21,19 @@ export const updateStoreInfo = async (req, res) => {
     if (storeAddress) store.storeAddress = storeAddress;
     await store.save();
     res.json({ success: true, message: "Cập nhật thông tin store thành công", store });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+export const getOrderByStoreId = async (req, res) => {
+  try {
+    const { storeId } = req.query; // Lấy storeId từ query string
+    if (!storeId) {
+      return res.json({ success: false, message: "Store ID is required" });
+    }
+    const orders = await orderModel.find({ storeId });
+    res.json({ success: true, orders });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message });
@@ -138,3 +151,20 @@ export const getMyStore = async (req, res) => {
       res.json({ success: false, message: error.message });
     }
   };
+  export const getStoreInfoForUser = async (req, res) => {
+    try {
+      const { token } = req.headers;
+      if (!token) {
+        return res.json({ success: false, message: "No token provided" });
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = decoded.id;
+      // Không bắt buộc trạng thái "approved"
+      const store = await storeModel.findOne({ ownerId: userId });
+      return res.json({ success: true, store: store || null });
+    } catch (error) {
+      console.error(error);
+      return res.json({ success: false, message: error.message });
+    }
+  };
+  

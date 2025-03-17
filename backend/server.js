@@ -6,7 +6,9 @@ import connectCloudinary from "./config/cloudinary.js";
 import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
-// import orderRouter from "./routes/orderRoute.js"
+import orderRouter from "./routes/orderRoute.js";
+import reviewRouter from "./routes/reviewRoute.js"; // Import review router
+import verifyRoute from "./routes/verifyRoute.js";
 import seedAdmin from "./seedAdmin.js";
 
 import followerModel from "./models/followerModel.js";
@@ -59,10 +61,12 @@ app.use(cors());
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
-// app.use("/api/order", orderRouter)
+app.use("/api/order", orderRouter);
+app.use("/api/review", reviewRouter); // Sử dụng router cho review
 app.use("/api/store", storeRouter);
 app.use("/api/store-management", storeManagementRouter);
 app.use("/api/store-management", storeManagementProductRoute);
+app.use("/", verifyRoute); // Verify route for VNPAY callback
 
 app.get("/", (req, res) => {
   res.send("API Working");
@@ -72,4 +76,6 @@ if (process.env.NODE_ENV !== "test") {
   app.listen(port, () =>
     console.log(`Server is running on PORT : ${port}`)
   );
-}export default app;
+}
+
+export default app;
