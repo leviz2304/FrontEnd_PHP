@@ -1,7 +1,23 @@
 import React, { useContext, useEffect, useState } from "react";
-import Search from "../components/Search";
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa'; // Icons remain useful
+
+// Import Shadcn UI components (adjust paths based on your setup)
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Your existing imports
+import Search from "../components/Search"; // Assuming Search might use shadcn/ui Input internally
 import { ShopContext } from "../context/ShopContext";
-import Item from "../components/Item";
+import Item from "../components/Item"; // Assuming Item is styled, potentially using shadcn/ui Card
 
 const Collection = () => {
   const { products, search } = useContext(ShopContext);
@@ -9,8 +25,9 @@ const Collection = () => {
   const [sortType, setSortType] = useState("relevant");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 12; // Adjust items per page
 
+  // --- Filtering and Sorting Logic (NO CHANGES NEEDED HERE) ---
   const toggleFilter = (value, setState) => {
     setState((prev) =>
       prev.includes(value)
@@ -21,30 +38,28 @@ const Collection = () => {
 
   const applyFilter = () => {
     let filtered = [...products];
-
     if (search) {
       filtered = filtered.filter((product) =>
         product.name.toLowerCase().includes(search.toLowerCase())
       );
     }
-
     if (category.length) {
       filtered = filtered.filter((product) =>
         category.includes(product.category)
       );
     }
-
     return filtered;
   };
 
   const applySorting = (productList) => {
+    const sortedList = productList.slice();
     switch (sortType) {
       case "low":
-        return productList.sort((a, b) => a.price - b.price);
+        return sortedList.sort((a, b) => a.price - b.price);
       case "high":
-        return productList.sort((a, b) => b.price - a.price);
+        return sortedList.sort((a, b) => b.price - a.price);
       default:
-        return productList;
+        return sortedList;
     }
   };
 
@@ -54,6 +69,7 @@ const Collection = () => {
     setFilteredProducts(sorted);
     setCurrentPage(1);
   }, [category, sortType, products, search]);
+  // --- End Filtering/Sorting Logic ---
 
   const getPaginatedProducts = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -63,15 +79,34 @@ const Collection = () => {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+        setCurrentPage(newPage);
+        window.scrollTo(0, 0);
+    }
+  };
+
+  // Helper function to generate unique IDs for checkboxes
+  const generateCheckboxId = (cat) => `category-${cat.replace(/\s+/g, '-')}`;
+
   return (
-    <div className="max-padd-container !px-0">
-      <div className="flex flex-col sm:flex-row gap-8 mb-16">
-        {/* FILTERS */}
-        <div className="min-w-72 bg-primary p-4 pt-8 pl-6 lg:pl-12">
-          <Search />
-          <div className="pl-5 py-3 mt-4 bg-white rounded-xl">
-            <h5 className="h5 mb-4">Categories</h5>
-            <div className="flex flex-col gap-2 text-sm font-light">
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col lg:flex-row gap-8">
+
+        {/* --- FILTERS SIDEBAR (Using Shadcn Card) --- */}
+        <aside className="lg:w-1/4 xl:w-1/5 lg:sticky lg:top-20 lg:h-[calc(100vh-10rem)] lg:overflow-y-auto p-1 space-y-6">
+          {/* Search */}
+          <div className="mb-4"> {/* Add margin bottom to search if needed */}
+              <Search />
+          </div>
+
+
+          {/* Categories Filter */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Categories</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               {[
                 "Headphones",
                 "Cameras",
@@ -79,75 +114,111 @@ const Collection = () => {
                 "Speakers",
                 "Mouse",
                 "Watches",
-              ].map((cat) => (
-                <label key={cat} className="flex gap-2 medium-14 text-gray-30">
-                  <input
-                    onChange={(e) => toggleFilter(e.target.value, setCategory)}
-                    type="checkbox"
-                    value={cat}
-                    className="w-3"
-                  />
-                  {cat}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="px-4 py-3 mt-6 bg-white rounded-xl">
-            <h5 className="h5 mb-4">Sort By</h5>
-            <select
-              onChange={(e) => setSortType(e.target.value)}
-              className="border border-slate-900/5 outline-none text-gray-30 medium-14 h-8 w-full rounded px-2"
-            >
-              <option value="relevant">Relevant</option>
-              <option value="low">Low</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-        </div>
-        {/* RIGHT SIDE */}
-        <div className="pr-5 rounded-l-xl">
-          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 gap-y-6 ">
+              ].map((cat) => {
+                const checkboxId = generateCheckboxId(cat);
+                return (
+                  <div key={cat} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={checkboxId}
+                      checked={category.includes(cat)}
+                      onCheckedChange={(checked) => {
+                        // checked can be boolean or 'indeterminate'
+                        if (checked === true) {
+                          toggleFilter(cat, setCategory);
+                        } else if (checked === false) {
+                          toggleFilter(cat, setCategory); // Call toggle again to remove
+                        }
+                      }}
+                    />
+                    <Label
+                      htmlFor={checkboxId}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {cat}
+                    </Label>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
+          {/* Sort By Filter (Using Shadcn Select) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Sort By</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={sortType} onValueChange={setSortType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select sorting" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevant">Relevant</SelectItem>
+                  <SelectItem value="low">Price: Low to High</SelectItem>
+                  <SelectItem value="high">Price: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        </aside>
+
+        {/* --- PRODUCTS GRID & PAGINATION --- */}
+        <main className="lg:w-3/4 xl:w-4/5">
+          {/* Product Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {getPaginatedProducts().length > 0 ? (
               getPaginatedProducts().map((product) => (
-                <Item product={product} />
+                <Item key={product._id} product={product} />
               ))
             ) : (
-              <p>No products found for selected filters</p>
+              <div className="col-span-full text-center py-10">
+                <p className="text-muted-foreground text-lg"> {/* Use shadcn muted color */}
+                  No products found matching your filters.
+                </p>
+              </div>
             )}
           </div>
-          {/* PAGINATION */}
-          <div className="flexCenter flex-wrap gap-4 mt-14 mb-10">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
-              className={`${
-                currentPage === 1 && "opacity-50 cursor-not-allowed"
-              } btn-secondary !py-1 !px-3`}
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, index) => (
-              <button
-                key={index + 1}
-                onClick={() => setCurrentPage(index + 1)}
-                className={`${
-                  currentPage === index + 1 && "!bg-tertiary text-white"
-                } btn-light !py-1 !px-3`}
-              >
-                {index + 1}
-              </button>
-            ))}
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-              className={`${
-                currentPage === totalPages && "opacity-50 cursor-not-allowed"
-              } btn-secondary !py-1 !px-3`}
-            >
-              Next
-            </button>
-          </div>
-        </div>
+
+          {/* --- PAGINATION (Using Shadcn Button) --- */}
+          {totalPages > 1 && (
+             <div className="flex justify-center items-center mt-14 mb-10 space-x-2">
+               {/* Previous Button */}
+               <Button
+                 variant="outline"
+                 size="icon" // Make it square for icon
+                 disabled={currentPage === 1}
+                 onClick={() => handlePageChange(currentPage - 1)}
+                 aria-label="Previous page"
+               >
+                  <FaChevronLeft className="h-4 w-4" />
+               </Button>
+
+               {/* Page Number Buttons */}
+               {Array.from({ length: totalPages }, (_, index) => (
+                 <Button
+                   key={index + 1}
+                   onClick={() => handlePageChange(index + 1)}
+                   variant={currentPage === index + 1 ? "default" : "outline"} // "default" likely your black button
+                   size="icon" // Make it square
+                   aria-current={currentPage === index + 1 ? 'page' : undefined}
+                 >
+                   {index + 1}
+                 </Button>
+               ))}
+
+               {/* Next Button */}
+               <Button
+                 variant="outline"
+                 size="icon" // Make it square
+                 disabled={currentPage === totalPages}
+                 onClick={() => handlePageChange(currentPage + 1)}
+                 aria-label="Next page"
+               >
+                 <FaChevronRight className="h-4 w-4" />
+               </Button>
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );

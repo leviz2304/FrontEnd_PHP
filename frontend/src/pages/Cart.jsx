@@ -1,132 +1,193 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useMemo } from "react";
+import { Link } from "react-router-dom"; // For empty cart link
 import { ShopContext } from "../context/ShopContext";
-import Title from "../components/Title";
-import { FaRegWindowClose } from "react-icons/fa";
-import { FaMinus, FaPlus } from "react-icons/fa6";
-import CartTotal from "../components/CartTotal";
+import CartTotal from "../components/CartTotal"; // Use the refactored CartTotal
 import Footer from "../components/Footer";
 
+// Import Shadcn UI components
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Minus, Plus, X } from "lucide-react"; // Use lucide-react icons
+import { Badge } from "@/components/ui/badge"; // Optional: for item count
+
 const Cart = () => {
-  const { navigate, products, currency, cartItems, getCartCount, updateQuantity } =
+  const { products, currency, cartItems, getCartCount, updateQuantity } =
     useContext(ShopContext);
 
-  const [cartData, setCartData] = useState([]);
-  const [quantities, setQuantities] = useState({});
+  // --- Simplified Data Processing using useMemo ---
+  const flattenedCart = useMemo(() => {
+    if (!products || products.length === 0) return []; // Guard clause if products aren't loaded
 
-  useEffect(() => {
-    if (products.length > 0) {
-      const tempData = [];
-      const initialQuantities = {};
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            tempData.push({
-              _id: items,
-              color: item,
-              quantity: cartItems[items][item],
-            });
-            initialQuantities[`${items}-${item}`] = cartItems[items][item];
-          }
-        }
-      }
-      setCartData(tempData);
-      setQuantities(initialQuantities);
-    }
+    return Object.entries(cartItems)
+      .flatMap(([productId, colors]) =>
+        Object.entries(colors)
+          .filter(([, quantity]) => quantity > 0) // Only items with quantity > 0
+          .map(([color, quantity]) => {
+            const product = products.find((p) => p._id === productId);
+            // Return null if product not found, filter out later
+            if (!product) return null;
+            return {
+              key: `${productId}-${color}`, // Unique key for React map
+              productId,
+              color,
+              quantity,
+              product, // Include full product data
+            };
+          })
+      )
+      .filter((item) => item !== null); // Filter out any items where product wasn't found
   }, [cartItems, products]);
 
-  const increment = (id, color) => {
-    const key = `${id}-${color}`;
-    const newValue = quantities[key] + 1;
-    setQuantities((prev) => ({ ...prev, [key]: newValue }));
-    updateQuantity(id, color, newValue);
+  // Helper to format currency
+  const formatCurrency = (amount) => {
+    return `${currency || "$"}${amount?.toFixed(2) || "0.00"}`;
   };
 
-  const decrement = (id, color) => {
-    const key = `${id}-${color}`;
-    if (quantities[key] > 1) {
-      const newValue = quantities[key] - 1;
-      setQuantities((prev) => ({ ...prev, [key]: newValue }));
-      updateQuantity(id, color, newValue);
+  // --- Event Handlers (directly call context update) ---
+  const handleIncrement = (productId, color) => {
+    const currentQuantity = cartItems[productId]?.[color] || 0;
+    updateQuantity(productId, color, currentQuantity + 1);
+  };
+
+  const handleDecrement = (productId, color) => {
+    const currentQuantity = cartItems[productId]?.[color] || 0;
+    if (currentQuantity > 1) {
+      updateQuantity(productId, color, currentQuantity - 1);
+    } else {
+      // Optional: Remove item if quantity becomes 0 or less
+      // updateQuantity(productId, color, 0);
     }
   };
 
+  const handleRemove = (productId, color) => {
+    updateQuantity(productId, color, 0); // Set quantity to 0 to remove
+  };
+
+
+  const cartItemCount = getCartCount(); // Get total item count
+
   return (
-    <section>
-      <div className="bg-primary mb-16">
-        <div className="max-padd-container py-10">
-          {/* TITLE */}
-          <div className="flexStart gap-x-4">
-            <Title title1={"Cart"} title2={"List"} title1Styles={"h3"} />
-            <h5 className="medium-15 text-gray-30 relative bottom-1.5">
-              ({getCartCount()} Items)
-            </h5>
-          </div>
-          {/* CONTAINER */}
-          <div className="mt-6">
-            {cartData.map((item, i) => {
-              const productData = products.find(
-                (product) => product._id === item._id
-              );
-              const key = `${item._id}-${item.color}`;
-              return (
-                <div key={i} className="bg-white p-2 mb-3 rounded-lg">
-                  <div className="flex items-center gap-x-3">
-                    <div className="flex items-start gap-6">
-                      <img
-                        src={productData.image[0]}
-                        alt="productImg"
-                        className="w-20 sm:w-18 rounded"
-                      />
-                    </div>
-                    <div className="flex flex-col w-full">
-                      <div className="flexBetween">
-                        <h5 className="h5 !my-0 line-clamp-1">
-                          {productData.name}
-                        </h5>
-                        <FaRegWindowClose
-                          onClick={() =>
-                            updateQuantity(item._id, item.color, 0)
-                          }
-                          className="cursor-pointer text-secondary"
+    <section className="min-h-screen"> {/* Ensure section takes at least screen height */}
+      {/* Removed the top bg-primary section for a cleaner look */}
+      <div className="max-padd-container py-12 md:py-16"> {/* Standard padding */}
+        {/* --- Page Header --- */}
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <h1 className="text-3xl font-bold">Shopping Cart</h1>
+          {cartItemCount > 0 && (
+             <Badge variant="outline" className="text-base px-3 py-1">
+                {cartItemCount} Item{cartItemCount !== 1 ? 's' : ''}
+             </Badge>
+          )}
+        </div>
+
+        {flattenedCart.length > 0 ? (
+          // --- Main Cart Layout (Table + Summary) ---
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-start">
+            {/* --- Cart Items Table (Takes 2 columns on large screens) --- */}
+            <div className="lg:col-span-2">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px] sm:w-[150px]">Product</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead className="text-center">Quantity</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="w-[50px]"> {/* For Remove button */} </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {flattenedCart.map((item) => (
+                    <TableRow key={item.key}>
+                      {/* Product Image */}
+                      <TableCell>
+                        <img
+                          src={item.product.image?.[0]}
+                          alt={item.product.name}
+                          className="w-16 h-16 object-cover rounded-md aspect-square"
                         />
-                      </div>
-                      <p className="bold-14 my-0.5">{item.color}</p>
-                      <div className="flexBetween">
-                        <div className="flex items-center ring-1 ring-slate-900/5 rounded-full overflow-hidden bg-primary">
-                          <button
-                            onClick={() => decrement(item._id, item.color)}
-                            className="p-1.5 bg-white text-secondary rounded-full shadow-md"
-                          >
-                            <FaMinus className="text-xs" />
-                          </button>
-                          <p className="px-2">{quantities[key]}</p>
-                          <button
-                            onClick={() => increment(item._id, item.color)}
-                            className="p-1.5 bg-white text-secondary rounded-full shadow-md"
-                          >
-                            <FaPlus className="text-xs" />
-                          </button>
+                      </TableCell>
+                      {/* Product Details */}
+                      <TableCell className="font-medium">
+                        <div className="flex flex-col">
+                           <span className="line-clamp-2">{item.product.name}</span>
+                           <span className="text-xs text-muted-foreground capitalize">
+                              Color: {item.color}
+                           </span>
                         </div>
-                        <h4 className="h4">
-                          {currency}
-                          {productData.price}
-                        </h4>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex my-20">
-            <div className="w-full sm:w-[450px]">
+                      </TableCell>
+                      {/* Price */}
+                      <TableCell>{formatCurrency(item.product.price)}</TableCell>
+                      {/* Quantity */}
+                      <TableCell>
+                         <div className="flex items-center justify-center gap-1 border border-border rounded-md p-1 w-fit mx-auto">
+                            <Button
+                               variant="ghost"
+                               size="icon"
+                               className="h-7 w-7 text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
+                               onClick={() => handleDecrement(item.productId, item.color)}
+                               disabled={item.quantity <= 1} // Disable if quantity is 1
+                            >
+                               <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center text-sm font-medium">
+                               {item.quantity}
+                            </span>
+                            <Button
+                               variant="ghost"
+                               size="icon"
+                               className="h-7 w-7 text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800"
+                               onClick={() => handleIncrement(item.productId, item.color)}
+                            >
+                               <Plus className="h-4 w-4" />
+                            </Button>
+                         </div>
+                      </TableCell>
+                      {/* Total Price per Item */}
+                      <TableCell className="text-right">
+                        {formatCurrency(item.product.price * item.quantity)}
+                      </TableCell>
+                      {/* Remove Button */}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleRemove(item.productId, item.color)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* --- Cart Summary (Takes 1 column on large screens) --- */}
+            <div className="lg:col-span-1">
+              {/* Use the refactored CartTotal component */}
               <CartTotal />
-              <button onClick={()=>navigate('/place-order')} className="btn-secondary mt-7">
-                Proceed to Checkout
-              </button>
+              {/* The Checkout button is now inside CartTotal */}
             </div>
           </div>
-        </div>
+        ) : (
+          // --- Empty Cart View ---
+          <div className="text-center py-20 flex flex-col items-center">
+            <h2 className="text-2xl font-semibold mb-2">Your Cart is Empty</h2>
+            <p className="text-muted-foreground mb-6">Looks like you haven't added anything to your cart yet.</p>
+            <Button asChild>
+               <Link to="/">Start Shopping</Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       <Footer />

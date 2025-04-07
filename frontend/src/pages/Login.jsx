@@ -95,7 +95,7 @@ const Login = () => {
                 value={email}
                 type="email"
                 placeholder="Email"
-                className="w-full px-3 py-1.5 ring-1 ring-slate-900/5 rounded bg-primary mt-1"
+                className="w-full px-3 py-1.5 ring-1 ring-slate-900/5 rounded bg-white mt-1"
               />
             </div>
             <div className="w-full">
@@ -107,7 +107,7 @@ const Login = () => {
                 value={password}
                 type="password"
                 placeholder="Password"
-                className="w-full px-3 py-1.5 ring-1 ring-slate-900/5 rounded bg-primary mt-1"
+                className="w-full px-3 py-1.5 ring-1 ring-slate-900/5 rounded bg-white mt-1"
               />
             </div>
             <button

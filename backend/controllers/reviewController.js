@@ -3,7 +3,6 @@ import reviewModel from "../models/reviewModel.js";
 export const submitReview = async (req, res) => {
   try {
     const { productId, rating, reviewText } = req.body;
-    // Giả sử userId được lấy từ middleware auth và gán vào req.user.id
     const userId = req.user?.id || req.body.userId;
 
     const newReview = new reviewModel({

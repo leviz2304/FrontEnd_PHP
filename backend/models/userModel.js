@@ -1,3 +1,4 @@
+// backend/models/userModel.js
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
@@ -8,14 +9,25 @@ const userSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now,
-      },
-      roleId: {
+    },
+    roleId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Role",
+        ref: "Role", // Đảm bảo Role model cũng được đăng ký với tên "Role"
         required: true,
-      },
-}, { minimize: false })
+    },
+    image: {
+        type: String,
+        default: '/default-avatar.png',
+    },
+    phone: { type: String, default: '' },
+    address: { type: String, default: '' }
+    // Thêm isBlocked nếu cần cho chức năng admin
+    // isBlocked: { type: Boolean, default: false }
 
-const userModel = mongoose.models.user || mongoose.model("user", userSchema)
+}, { minimize: false });
 
-export default userModel
+// --- SỬA Ở ĐÂY: Đăng ký model với tên "User" (viết hoa) ---
+const userModel = mongoose.models.User || mongoose.model("User", userSchema);
+// --- KẾT THÚC SỬA ---
+
+export default userModel;

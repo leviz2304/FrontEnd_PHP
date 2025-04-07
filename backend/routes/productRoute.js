@@ -1,13 +1,46 @@
-import express from "express"
-import { addProduct, listProducts, removeProduct, singleProduct } from "../controllers/productController.js"
-import upload from "../middleware/multer.js"
-import storeAuth from "../middleware/storeAuth.js"
+import express from "express";
+import {
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    listStoreOwnerProducts,
+    listAllProducts,
+    getProductById
+} from "../controllers/productController.js";
+import upload from "../middleware/multer.js";
+import storeAuth from "../middleware/storeAuth.js"; 
+// import authUser from "../middleware/authUser.js"; 
 
-const productRouter = express.Router()
+const productRouter = express.Router();
 
-productRouter.post("/add",storeAuth, upload.fields([{name:'image1', maxCount:1},{name:'image2', maxCount:1},{name:'image3', maxCount:1},{name:'image4', maxCount:1}]), addProduct)
-productRouter.post("/remove",storeAuth, removeProduct)
-productRouter.post("/single", singleProduct)
-productRouter.get("/list", listProducts)
+productRouter.get("/list", listAllProducts);      
+productRouter.get("/:productId", getProductById); 
 
-export default productRouter
+productRouter.post(
+    "/add",
+    storeAuth, 
+    upload.fields([ 
+        { name: 'image1', maxCount: 1 },
+        { name: 'image2', maxCount: 1 },
+        { name: 'image3', maxCount: 1 },
+        { name: 'image4', maxCount: 1 }
+    ]),
+    addProduct
+);
+
+productRouter.put(
+    "/:productId",
+    storeAuth, 
+    updateProduct 
+);
+
+productRouter.delete(
+    "/:productId",
+    storeAuth, 
+    deleteProduct 
+);
+
+productRouter.get("/my-store/list", storeAuth, listStoreOwnerProducts);
+
+
+export default productRouter;

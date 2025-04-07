@@ -1,62 +1,71 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import Title from "./Title";
-// Import Swiper React components
 import { Swiper, SwiperSlide } from "swiper/react";
-// Import Swiper styles
 import "swiper/css";
-// import required modules
-import { Autoplay } from "swiper/modules";
+import { Autoplay, Navigation } from "swiper/modules";
 import Item from "./Item";
 import { ShopContext } from "../context/ShopContext";
-
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const NewArrivals = () => {
-  const {products} = useContext(ShopContext)
-  const [PopularProducts, setPopularProducts] = useState([]);
+  const { products } = useContext(ShopContext);
+  const [newArrivals, setNewArrivals] = useState([]);
+  const swiperRef = useRef(null);
 
   useEffect(() => {
-    const data = products.slice(0, 7);
-    setPopularProducts(data);
+    const data = products.slice(-8);
+    setNewArrivals(data);
   }, [products]);
 
   return (
-    <section className="max-padd-container pt-16">
-      <Title
-        title1={"New"}
-        title2={"Arrivals"}
-        titleStyles={"pb-14"}
-        paraStyles={"!block"}
-      />
-      {/* CONTAINER */}
+    <section className="max-padd-container py-16">
+      <div className="flex justify-between items-center mb-10">
+        <Title
+          title1={"New Arrivals"}
+          paraStyles={"!block"}
+        />
+         <div className="flex gap-2">
+           <Button
+             variant="outline"
+             size="icon"
+             className="rounded-full"
+             onClick={() => swiperRef.current?.swiper.slidePrev()}
+           >
+             <ChevronLeft className="h-4 w-4" />
+             <span className="sr-only">Previous</span>
+           </Button>
+           <Button
+             variant="outline"
+             size="icon"
+             className="rounded-full"
+             onClick={() => swiperRef.current?.swiper.slideNext()}
+           >
+             <ChevronRight className="h-4 w-4" />
+              <span className="sr-only">Next</span>
+           </Button>
+         </div>
+      </div>
+
       <Swiper
+        ref={swiperRef}
         autoplay={{
-          delay: 4000,
+          delay: 5000,
           disableOnInteraction: false,
         }}
+        loop={true}
         breakpoints={{
-          300: {
-            slidesPerView: 2,
-            spaceBetween: 30,
-          },
-          666: {
-            slidesPerView: 3,
-            spaceBetween: 30,
-          },
-          900: {
-            slidesPerView: 4,
-            spaceBetween: 30,
-          },
-          1300: {
-            slidesPerView: 5,
-            spaceBetween: 30,
-          },
+          300: { slidesPerView: 2, spaceBetween: 15 },
+          640: { slidesPerView: 3, spaceBetween: 20 },
+          768: { slidesPerView: 4, spaceBetween: 20 },
+          1024: { slidesPerView: 5, spaceBetween: 30 },
         }}
-        modules={[Autoplay]}
-        className="h-[399px]"
+        modules={[Autoplay, Navigation]}
+        className="pb-4"
       >
-        {PopularProducts.map((product) => (
+        {newArrivals.map((product) => (
           <SwiperSlide key={product._id}>
-            <Item product={product}/>
+            <Item product={product} className="h-full" />
           </SwiperSlide>
         ))}
       </Swiper>

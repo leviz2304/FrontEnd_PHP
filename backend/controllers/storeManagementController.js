@@ -151,20 +151,5 @@ export const getMyStore = async (req, res) => {
       res.json({ success: false, message: error.message });
     }
   };
-  export const getStoreInfoForUser = async (req, res) => {
-    try {
-      const { token } = req.headers;
-      if (!token) {
-        return res.json({ success: false, message: "No token provided" });
-      }
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = decoded.id;
-      // Không bắt buộc trạng thái "approved"
-      const store = await storeModel.findOne({ ownerId: userId });
-      return res.json({ success: true, store: store || null });
-    } catch (error) {
-      console.error(error);
-      return res.json({ success: false, message: error.message });
-    }
-  };
+ 
   

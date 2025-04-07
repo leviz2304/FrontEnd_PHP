@@ -1,99 +1,119 @@
-import React, { useContext, useState } from "react";
-import { Link } from "react-router-dom";
+// src/components/Header.jsx
+
+import React, { useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
-import { FaBars, FaBarsStaggered } from "react-icons/fa6";
 import { TbUserCircle } from "react-icons/tb";
-import { RiUserLine } from "react-icons/ri";
+import { LogIn, ShieldCheck } from "lucide-react"; // Thêm icon Admin (ví dụ)
 import { ShopContext } from "../context/ShopContext";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Header = () => {
-  const [menuOpened, setMenuOpened] = useState(false);
-  const { getCartCount, navigate, token, setToken, storeInfo } = useContext(ShopContext);
+    const navigate = useNavigate();
+    const { getCartCount, token, setToken, storeInfo, user, setUser } = useContext(ShopContext); // Thêm user, setUser
 
-  const toggleMenu = () => setMenuOpened((prev) => !prev);
+    const logout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("storeInfo");
+        setToken("");
+        setUser(null); // <<< Quan trọng: Reset user state khi logout
+        // navigate("/login"); // navigate được xử lý trong onClick của DropdownMenuItem
+    };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken("");
-    navigate("/login");
-  };
+    return (
+        <header className="max-padd-container w-full mb-4 md:mb-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between py-3">
+                {/* LOGO */}
+                <Link to="/" className="flex items-center gap-x-2 flex-1 bold-24 xl:bold-28 text-gray-900 dark:text-white">
+                    Underdogs
+                </Link>
 
-  return (
-    <header className="max-padd-container w-full mb-2">
-      <div className="flexBetween py-3">
-        {/* LOGO */}
-        <Link to="/" className="flex flex-1 bold-24 xl:bold-28">
-          Underdogs
-        </Link>
-        {/* NAVBAR */}
-        <div className="flex-1">
-          <Navbar
-            containerStyles={`${
-              menuOpened
-                ? "flex items-start flex-col gap-y-8 fixed top-16 right-6 p-5 bg-white rounded-xl shadow-md w-52 ring-1 ring-slate-900/5 z-50"
-                : "hidden xl:flex gap-x-5 xl:gap-x-7 medium-15 bg-primary ring-1 ring-slate-900/5 rounded-full p-1"
-            }`}
-            onClick={() => setMenuOpened(false)}
-          />
-        </div>
-        {/* BUTTONS */}
-        <div className="flex-1 flex items-center justify-end gap-x-2 xs:gap-x-8">
-          {/* MENU TOGGLE */}
-          {menuOpened ? (
-            <FaBarsStaggered onClick={toggleMenu} className="xl:hidden cursor-pointer text-xl" />
-          ) : (
-            <FaBars onClick={toggleMenu} className="xl:hidden cursor-pointer text-xl" />
-          )}
-          {/* CART */}
-          <Link to="/cart" className="flex relative">
-            <div className="ring-1 ring-slate-900 rounded-full px-3 bold-18">
-              Cart
-              <span className="bg-secondary text-white text-[12px] font-semibold absolute -top-3.5 -right-2 flexCenter w-4 h-4 rounded-full shadow-md">
-                {getCartCount()}
-              </span>
+                {/* NAVBAR CONTAINER */}
+                <div className="flex-1 flex justify-center items-center">
+                    <Navbar
+                        containerStyles={
+                            "hidden xl:flex items-center gap-x-5 xl:gap-x-6 text-sm font-medium bg-black text-white ring-1 ring-gray-800 rounded-lg p-2"
+                        }
+                    />
+                </div>
+
+                {/* BUTTONS CONTAINER */}
+                <div className="flex-1 flex items-center justify-end gap-x-3 xs:gap-x-4">
+                    {/* CART */}
+                    <Link to="/cart">
+                         <Button variant="outline" size="default" className="rounded-full relative px-4 border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 text-gray-900 dark:text-white">
+                            Cart
+                            <span className="ml-1 bg-black text-white text-xs font-bold absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 rounded-full shadow-md">
+                                {getCartCount()}
+                            </span>
+                        </Button>
+                    </Link>
+
+                    {/* USER PROFILE / LOGIN */}
+                    {token ? (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="rounded-full focus-visible:ring-0 focus-visible:ring-offset-0 w-10 h-10 p-0 flex items-center justify-center">
+                                    <TbUserCircle className="w-8 h-8 cursor-pointer text-gray-700 dark:text-gray-300" /> {/* Có thể dùng w/h hoặc text-* */}
+                                    <span className="sr-only">Open user menu</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-48 mr-4" align="end">
+                                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                                    Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate("/orders")} className="cursor-pointer">
+                                    Orders
+                                </DropdownMenuItem>
+
+                                {/* --- KIỂM TRA VAI TRÒ ADMIN --- */}
+                                {user?.roleId?.roleName === 'admin' && (
+                                    <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer font-medium text-indigo-600 dark:text-indigo-400 focus:bg-indigo-100 dark:focus:bg-indigo-900/50">
+                                        <ShieldCheck className="mr-2 h-4 w-4"/> {/* Icon Admin */}
+                                        Admin Panel
+                                    </DropdownMenuItem>
+                                )}
+
+                                {/* Logic hiển thị My Store / Open Store */}
+                                {user?.roleId?.roleName !== 'admin' && ( // Chỉ hiển thị cho user thường
+                                     storeInfo && storeInfo.status === "approved" ? (
+                                        <DropdownMenuItem onClick={() => navigate("/my-store")} className="cursor-pointer">
+                                            My Store
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem onClick={() => navigate("/request-store")} className="cursor-pointer">
+                                            Open Store
+                                        </DropdownMenuItem>
+                                    )
+                                )}
+
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => { logout(); navigate('/login'); }} className="cursor-pointer text-red-600 dark:text-red-400 focus:bg-red-100 dark:focus:bg-red-900/50 focus:text-red-700 dark:focus:text-red-400">
+                                    Logout
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        // Button Login
+                        <Button onClick={() => navigate("/login")} variant="outline" className="rounded-full border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 text-gray-900 dark:text-white">
+                            Login
+                            <LogIn className="ml-2 h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
             </div>
-          </Link>
-          {/* USER PROFILE */}
-          <div className="group relative">
-            <div>
-              {token ? (
-                <TbUserCircle className="text-[29px] cursor-pointer" />
-              ) : (
-                <button onClick={() => navigate("/login")} className="btn-dark flexCenter gap-x-2">
-                  Login
-                  <RiUserLine className="text-xl" />
-                </button>
-              )}
-            </div>
-            {token && (
-  <ul className="bg-white p-2 w-32 ring-1 ring-slate-900/5 rounded absolute right-0 top-7 hidden group-hover:flex flex-col medium-14 shadow-md z-50">
-    <li onClick={() => navigate("/profile")} className="p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer">
-      Profile
-    </li>
-    <li onClick={() => navigate("/orders")} className="p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer">
-      Orders
-    </li>
-    {storeInfo && storeInfo.status === "approved" ? (
-      <li onClick={() => navigate("/my-store")} className="p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer">
-        My Store
-      </li>
-    ) : (
-      <li onClick={() => navigate("/request-store")} className="p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer">
-        Open Store
-      </li>
-    )}
-    <li onClick={logout} className="p-2 text-tertiary rounded-md hover:bg-primary cursor-pointer">
-      Logout
-    </li>
-  </ul>
-)}
-
-
-          </div>
-        </div>
-      </div>
-    </header>
-  );
+        </header>
+    );
 };
 
 export default Header;

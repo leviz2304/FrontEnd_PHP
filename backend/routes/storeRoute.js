@@ -1,20 +1,34 @@
-// routes/storeRoute.js
+// backend/routes/storeRoute.js
 import express from "express";
-import { requestStore, getPendingStores, approveStore,getSingleStore,getStoreInfoForUser  } from "../controllers/storeController.js";
-import authUser from "../middleware/auth.js";       // user phải đăng nhập
-import adminAuth from "../middleware/adminAuth.js"; // admin mới được duyệt store
+import {
+  requestStore,
+  getPendingStores,
+  approveStore,
+  getSingleStore,
+  getStoreInfoForUser,
+  getPublicStoreDetails,
+  followStore,
+  unfollowStore,
+  isFollowingStore
+} from "../controllers/storeController.js";
+import authUser from "../middleware/auth.js"; 
+import adminAuth from "../middleware/adminAuth.js";
 
 const storeRouter = express.Router();
 
-// User gửi request mở store
+storeRouter.get("/public/:storeId", getPublicStoreDetails);
+
+storeRouter.post("/follow/:storeId", authUser, followStore);
+storeRouter.post("/unfollow/:storeId", authUser, unfollowStore);
+storeRouter.post("/isfollowing/:storeId", authUser, isFollowingStore); 
+
 storeRouter.post("/request", authUser, requestStore);
 
-// Admin xem danh sách store pending
 storeRouter.get("/pending", adminAuth, getPendingStores);
+storeRouter.post("/approve", adminAuth, approveStore);
+
 storeRouter.get("/info", authUser, getStoreInfoForUser);
 
-// Admin phê duyệt store
-storeRouter.post("/approve", adminAuth, approveStore);
-storeRouter.get("/single", getSingleStore);
+storeRouter.get("/single", getSingleStore); 
 
 export default storeRouter;
