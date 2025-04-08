@@ -1,4 +1,3 @@
-// middleware/reviewById.js
 import reviewModel from "../models/reviewModel.js";
 
 export const reviewById = async (req, res, next, id) => {

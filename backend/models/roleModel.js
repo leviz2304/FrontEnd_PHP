@@ -5,7 +5,7 @@ const roleSchema = new mongoose.Schema(
     roleName: {
       type: String,
       required: true,
-      unique: true, // e.g. 'admin', 'user', etc.
+      unique: true, 
     },
   },
   { timestamps: true }

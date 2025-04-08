@@ -10,9 +10,7 @@ const adminAuth = async (req, res, next) => {
     }
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = decoded.id;
-    
-    // Find the user and verify the admin role
-    const adminUser = await userModel.findById(userId);
+        const adminUser = await userModel.findById(userId);
     if (!adminUser) {
       return res.json({ success: false, message: "User not found." });
     }

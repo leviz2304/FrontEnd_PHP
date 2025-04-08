@@ -52,7 +52,7 @@ export const createProduct = async (req, res) => {
       price,
       category,
       popular: popular === "true" || popular === true,
-      colors: colorsData,  // Use the cleaned colorsData
+      colors: colorsData,  
       image: imagesUrl,
       date: Date.now(),
     };
@@ -67,9 +67,6 @@ export const createProduct = async (req, res) => {
   }
 };
 
-
-
-// Cập nhật sản phẩm (CRUD Update) - Similar fix needed here!
 export const updateProduct = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -81,12 +78,10 @@ export const updateProduct = async (req, res) => {
     if (!store) {
       return res.json({ success: false, message: "Store không tồn tại" });
     }
-    // Kiểm tra sản phẩm thuộc store của người dùng
     const product = await productModel.findOne({ _id: productId, storeId: store._id });
     if (!product) {
       return res.json({ success: false, message: "Sản phẩm không tồn tại hoặc không thuộc store của bạn" });
     }
-    // Lấy các trường cần cập nhật từ body
     const { name, description, price, category, popular, colors } = req.body;
     if (name) product.name = name;
     if (description) product.description = description;
@@ -94,7 +89,6 @@ export const updateProduct = async (req, res) => {
     if (category) product.category = category;
     if (popular !== undefined) product.popular = popular;
 
-    // --- FIX:  Handle colors correctly ---
     if (colors) {
       let colorsData = [];
       try {
@@ -102,7 +96,6 @@ export const updateProduct = async (req, res) => {
       } catch (e) {
         colorsData = colors.split(",").map((c) => c.trim());
       }
-       // *** KEY FIX *** Remove quotes *here*, before saving to DB
       product.colors = colorsData.map(color => color.replace(/['"]+/g, ''));;
     }
     
@@ -114,7 +107,6 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// ... (rest of your storeManagementProductController.js - no changes needed in other functions)
 export const listProducts = async (req, res) => {
       try {
         const { token } = req.headers;
@@ -131,8 +123,6 @@ export const listProducts = async (req, res) => {
         res.json({ success: false, message: error.message });
       }
     };
-
-    // Xoá sản phẩm (CRUD Delete)
     export const deleteProduct = async (req, res) => {
       try {
         const { productId } = req.params;
@@ -173,7 +163,6 @@ export const listProducts = async (req, res) => {
           }
           const decoded = jwt.verify(token, process.env.JWT_SECRET);
           const userId = decoded.id;
-          // Không bắt buộc trạng thái "approved"
           const store = await storeModel.findOne({ ownerId: userId });
           return res.json({ success: true, store: store || null });
         } catch (error) {

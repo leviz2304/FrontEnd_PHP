@@ -27,8 +27,6 @@ const addToCart = async (req, res) => {
     }
 }
 
-
-// CONTROLLER FUNCTION FOR UPADTING USER CART
 const updateCart = async (req, res) => {
     try {
         const { userId, itemId, color, quantity } = req.body
@@ -48,8 +46,6 @@ const updateCart = async (req, res) => {
     }
 }
 
-
-// CONTROLLER FUNCTION FOR GETTING USER CART DATA
 const getUserCart = async (req, res) => {
     try {
         const { userId } = req.body

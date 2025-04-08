@@ -50,14 +50,13 @@ export const placeOrder = async (req, res) => {
       amount,
       address,
       paymentMethod: "COD",
-      payment: false, // COD chưa được thanh toán ngay lúc đặt hàng
+      payment: false, 
       date: Date.now(),
     };
 
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
-    // Xóa giỏ hàng trong DB sau khi đặt hàng thành công
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
     res.json({ success: true, message: "Order placed successfully." });
@@ -66,8 +65,6 @@ export const placeOrder = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
-
-// Controller cho VNPAY
 export const placeOrderVNPAY = async (req, res) => {
   try {
     const { userId, storeId, items, amount, address } = req.body;
@@ -90,13 +87,13 @@ export const placeOrderVNPAY = async (req, res) => {
       vnp_Version: "2.0.0",
       vnp_Command: "pay",
       vnp_TmnCode: process.env.VNP_TMN_CODE,
-      vnp_Amount: amount * 100, // Nếu theo yêu cầu là nhân 100, nếu không thì sửa lại
+      vnp_Amount: amount * 100, 
       vnp_CurrCode: "VND",
-      vnp_TxnRef: newOrder._id.toString(), // Unique transaction reference (order ID)
+      vnp_TxnRef: newOrder._id.toString(), 
       vnp_OrderInfo: `Payment for order ${newOrder._id}`,
       vnp_OrderType: "other",
       vnp_Locale: "vn",
-      vnp_ReturnUrl: process.env.VNP_RETURN_URL, // Return URL sau khi thanh toán
+      vnp_ReturnUrl: process.env.VNP_RETURN_URL, 
       vnp_IpAddr: req.ip,
       vnp_CreateDate: moment().format("YYYYMMDDHHmmss"),
     };
@@ -107,16 +104,13 @@ export const placeOrderVNPAY = async (req, res) => {
       .createHmac("sha512", process.env.VNP_HASH_SECRET)
       .update(signData)
       .digest("hex");
-
-    // Build the payment URL
     const vnpUrl =
       process.env.VNP_URL +
       "?" +
       queryString.stringify(sortedParams) +
       `&vnp_SecureHash=${secureHash}`;
 
-    // Ở VNPAY, bạn thường không xóa giỏ hàng ngay vì cần chờ callback từ VNPAY xác nhận thanh toán.
-    // Tuy nhiên, nếu bạn muốn xóa giỏ hàng ngay sau khi tạo đơn hàng, bạn có thể uncomment dòng bên dưới:
+    
     await userModel.findByIdAndUpdate(userId, { cartData: {} });
 
     return res.json({ success: true, vnpUrl });

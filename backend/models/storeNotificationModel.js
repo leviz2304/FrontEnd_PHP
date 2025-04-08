@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 
 const storeNotificationSchema = new mongoose.Schema(
   {
-    // Relationship to Store
     storeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Store",

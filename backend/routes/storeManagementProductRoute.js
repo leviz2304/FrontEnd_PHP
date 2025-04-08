@@ -1,4 +1,3 @@
-// src/routes/storeManagementProductRoute.js
 import express from "express";
 import upload from "../middleware/multer.js";
 import {

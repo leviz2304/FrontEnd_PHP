@@ -144,7 +144,7 @@ export const adminUpdateProduct = async (req, res) => {
         const updatedProduct = await productModel.findByIdAndUpdate(
             productId,
             { $set: updateData },
-            { new: true, runValidators: true } // Trả về bản ghi mới và chạy validators
+            { new: true, runValidators: true } 
         ).populate('storeId', 'storeName');
 
         if (!updatedProduct) {

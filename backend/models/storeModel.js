@@ -20,7 +20,6 @@ const storeSchema = new mongoose.Schema(
       enum: ["pending", "approved"],
       default: "pending",
     },
-    // Thêm trường avatar cho store
     storeLogo: {
       type: String,
       default: "",

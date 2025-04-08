@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import storeModel from "../models/storeModel.js";
 import productModel from "../models/productModel.js";
 import orderModel from "../models/orderModel.js";
-// Hàm cập nhật thông tin store (tên, địa chỉ)
 export const updateStoreInfo = async (req, res) => {
   try {
     const { storeName, storeAddress } = req.body;
@@ -28,7 +27,7 @@ export const updateStoreInfo = async (req, res) => {
 };
 export const getOrderByStoreId = async (req, res) => {
   try {
-    const { storeId } = req.query; // Lấy storeId từ query string
+    const { storeId } = req.query;
     if (!storeId) {
       return res.json({ success: false, message: "Store ID is required" });
     }
@@ -40,7 +39,6 @@ export const getOrderByStoreId = async (req, res) => {
   }
 };
 
-// Hàm cập nhật avatar (storeLogo) cho store
 export const updateStoreAvatar = async (req, res) => {
   try {
     const { token } = req.headers;
@@ -53,7 +51,6 @@ export const updateStoreAvatar = async (req, res) => {
     if (!store) {
       return res.json({ success: false, message: "Store không tồn tại" });
     }
-    // Kiểm tra file đã được upload từ middleware multer (req.file)
     if (!req.file) {
       return res.json({ success: false, message: "Chưa upload file avatar" });
     }
@@ -66,8 +63,6 @@ export const updateStoreAvatar = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
-
-// Hàm lấy danh sách sản phẩm của store hiện tại (dựa theo ownerId)
 export const getStoreProducts = async (req, res) => {
   try {
     const { token } = req.headers;
@@ -86,7 +81,6 @@ export const getStoreProducts = async (req, res) => {
   }
 };
 
-// Hàm cập nhật sản phẩm của store
 export const updateStoreProduct = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -98,12 +92,10 @@ export const updateStoreProduct = async (req, res) => {
     if (!store) {
       return res.json({ success: false, message: "Store không tồn tại" });
     }
-    // Kiểm tra sản phẩm thuộc store này
     const product = await productModel.findOne({ _id: productId, storeId: store._id });
     if (!product) {
       return res.json({ success: false, message: "Sản phẩm không tồn tại hoặc không thuộc store của bạn" });
     }
-    // Lấy các trường cần cập nhật từ body
     const { name, description, price, category, popular, colors } = req.body;
     if (name) product.name = name;
     if (description) product.description = description;

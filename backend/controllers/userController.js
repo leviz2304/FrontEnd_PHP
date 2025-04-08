@@ -1,5 +1,5 @@
 import userModel from "../models/userModel.js";
-import roleModel from "../models/roleModel.js"; // Import the Role model
+import roleModel from "../models/roleModel.js"; 
 import bcrypt from "bcrypt";
 import validator from "validator";
 import jwt from "jsonwebtoken";
@@ -12,7 +12,7 @@ const createToken = (id) => {
 };
 export const updateUserAvatar = async (req, res) => {
   try {
-      const { token } = req.headers; // <<< Lấy token từ header
+      const { token } = req.headers; 
 
       if (!token) {
            return res.status(401).json({ success: false, message: "Not authorized, no token" });
@@ -44,8 +44,6 @@ export const updateUserAvatar = async (req, res) => {
       });
 
       
-      // try { fs.unlinkSync(req.file.path); } catch(e) { console.error("Error removing temp file", e); }
-
       user.image = result.secure_url;
       await user.save();
 
@@ -56,8 +54,8 @@ export const updateUserAvatar = async (req, res) => {
 
   } catch (error) {
       console.error("Error uploading avatar:", error);
-       // Optional: Xóa file tạm nếu có lỗi ở các bước sau
-      // if (req.file && req.file.path) { try { fs.unlinkSync(req.file.path); } catch (e) { console.error("Error deleting temp file on error:", e); } }
+      // if (req.file && req.file.path)
+      //  { try { fs.unlinkSync(req.file.path); } catch (e) { console.error("Error deleting temp file on error:", e); } }
       res.status(500).json({ success: false, message: "Failed to upload avatar." });
   }
 };
@@ -88,7 +86,7 @@ export const updateUserProfile = async (req, res) => {
 };
 export const getUserInfo = async (req, res) => {
   try {
-    const userId = req.body.userId; // Lấy từ authUser middleware
+    const userId = req.body.userId;
 
     const user = await userModel.findById(userId)
                                 .select("-password")
@@ -105,9 +103,7 @@ export const getUserInfo = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error getting user info" });
   }
 };
-  
-// Regular user login
-const loginUser = async (req, res) => {
+  const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await userModel.findOne({ email });
@@ -126,8 +122,6 @@ const loginUser = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
-
-// Regular user registration; always assigns the "user" role
 const registerUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -144,8 +138,6 @@ const registerUser = async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Look up the "user" role. Create it if it doesn't exist.
         let userRole = await roleModel.findOne({ roleName: "user" });
         if (!userRole) {
             userRole = await roleModel.create({ roleName: "user" });
@@ -155,7 +147,7 @@ const registerUser = async (req, res) => {
             name: name,
             email: email,
             password: hashedPassword,
-            roleId: userRole._id, // assign the "user" role
+            roleId: userRole._id, 
         });
 
         const user = await newUser.save();
@@ -167,7 +159,6 @@ const registerUser = async (req, res) => {
     }
 };
 
-// Admin login: verifies that the account exists, password matches, and the role is "admin"
 const adminLogin = async (req, res) => {
     try {
       const { email, password } = req.body;
@@ -180,13 +171,9 @@ const adminLogin = async (req, res) => {
         return res.json({ success: false, message: "Invalid Credentials" });
       }
       
-      // Verify the user's role from the Role collection
       const role = await roleModel.findById(adminUser.roleId);
-      // Also, check if the user owns an approved store
       const approvedStore = await storeModel.findOne({ ownerId: adminUser._id, status: "approved" });
-      
-      // Allow login if either the role is admin OR if the user has an approved store
-      if (role.roleName !== "admin" && !approvedStore) {
+            if (role.roleName !== "admin" && !approvedStore) {
         return res.json({ success: false, message: "Not an admin account or approved store owner" });
       }
       

@@ -2,8 +2,8 @@ import storeModel from "../models/storeModel.js";
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import productModel from "../models/productModel.js";
-import followerModel from "../models/followerModel.js"; // IMPORT
-import userNotificationModel from "../models/userNotificationModel.js"; // IMPORT
+import followerModel from "../models/followerModel.js"; 
+import userNotificationModel from "../models/userNotificationModel.js";
 
 
 export const requestStore = async (req, res) => {
@@ -46,8 +46,7 @@ export const approveStore = async (req, res) => {
         if (!store) {
             return res.json({ success: false, message: "Store not found" });
         }
-        // Cập nhật trạng thái thành "approved"
-        store.status = "approved";
+                store.status = "approved";
         await store.save();
 
         res.json({ success: true, message: "Store approved successfully" });
@@ -80,8 +79,7 @@ export const getStoreInfoForUser = async (req, res) => {
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userId = decoded.id;
-        // Không bắt buộc trạng thái "approved"
-        const store = await storeModel.findOne({ ownerId: userId }); // Use owner, not ownerId
+        const store = await storeModel.findOne({ ownerId: userId }); 
         return res.json({ success: true, store: store || null });
     } catch (error) {
         console.error(error);

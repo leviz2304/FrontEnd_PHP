@@ -9,7 +9,6 @@ import {
 } from "../controllers/productController.js";
 import upload from "../middleware/multer.js";
 import storeAuth from "../middleware/storeAuth.js"; 
-// import authUser from "../middleware/authUser.js"; 
 
 const productRouter = express.Router();
 

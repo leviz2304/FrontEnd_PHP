@@ -1,4 +1,3 @@
-// backend/routes/userRoute.js
 import express from "express"
 import { adminLogin, loginUser, registerUser,updateUserProfile,updateUserAvatar } from "../controllers/userController.js"
 import authUser from "../middleware/auth.js"; 
