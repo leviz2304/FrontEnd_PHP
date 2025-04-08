@@ -55,6 +55,7 @@ export const approveStore = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
+
 export const getSingleStore = async (req, res) => {
     try {
         const { storeId } = req.query;

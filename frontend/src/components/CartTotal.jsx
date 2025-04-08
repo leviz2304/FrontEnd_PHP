@@ -26,7 +26,7 @@ const CartTotal = () => {
   };
 
   return (
-    <Card className="w-full sticky top-24">
+    <Card className="w-full top-24">
       <CardHeader>
         <CardTitle className="text-xl">Order Summary</CardTitle>
       </CardHeader>

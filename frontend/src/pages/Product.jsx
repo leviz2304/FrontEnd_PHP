@@ -49,7 +49,7 @@ const Product = () => {
   useEffect(() => {
     if (product && product.storeId) {
       axios
-        .get(`${backendUrl}/api/store/single?storeId=${product.storeId}`)
+        .get(`${backendUrl}/api/store/single?storeId=${product.storeId._id}`)
         .then((response) => {
           if (response.data.success) {
             setStoreInfo(response.data.store);
